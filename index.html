@@ -1,392 +1,559 @@
 <!doctype html>
 <html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TRACE-REP LITE</title>
-<style>
-:root {
-  color-scheme: light dark;
-  --canvas: light-dark(#f4f6f8, #0c111b);
-  --surface: light-dark(#ffffff, #151c28);
-  --surface-2: light-dark(#f8fafc, #1b2432);
-  --sidebar: light-dark(#111b2b, #0a101a);
-  --sidebar-text: #d6dfed;
-  --text: light-dark(#182334, #eef3fa);
-  --muted: light-dark(#6e7b8f, #a0aec1);
-  --border: light-dark(#e3e8ef, #2a3545);
-  --accent: #5b78ee;
-  --accent-soft: light-dark(#edf0ff, #222d55);
-  --green: #18a874;
-  --green-soft: light-dark(#e9f8f1, #153c30);
-  --amber: #cb861a;
-  --amber-soft: light-dark(#fff5df, #49361a);
-  --red: #dc5962;
-  --red-soft: light-dark(#fff0f1, #48272d);
-  --blue-soft: light-dark(#eaf3ff, #1c3555);
-  --shadow: 0 8px 26px rgba(20, 33, 55, .045);
-}
-* { box-sizing: border-box; }
-html, body { margin: 0; min-height: 100%; background: var(--canvas); color: var(--text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-button, input, select, textarea { font: inherit; }
-button { cursor: pointer; }
-button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible { outline: 3px solid #8da1ff; outline-offset: 2px; }
-#app { min-height: 100vh; width: 100%; background: var(--canvas); }
-.shell { min-height: 100vh; display: grid; grid-template-columns: 244px minmax(0,1fr); }
-.sidebar { background: var(--sidebar); color: var(--sidebar-text); padding: 24px 14px 18px; display: flex; flex-direction: column; gap: 28px; }
-.brand { display:flex; align-items:center; gap: 11px; padding: 0 12px; }
-.brand-mark { display:grid; place-items:center; width:38px; height:38px; border-radius:12px; color:white; background:linear-gradient(145deg,#6d87ff,#4659cc); box-shadow:0 6px 18px rgba(76,96,218,.25); }
-.brand-name { font-weight:750; letter-spacing:.075em; font-size:14px; line-height:1.15; color:#fff; }
-.brand-caption { font-size:10px; color:#93a4bf; margin-top:4px; letter-spacing:.11em; }
-.nav-label { color:#7588a6; font-size:10px; font-weight:750; letter-spacing:.13em; text-transform:uppercase; padding:0 14px; margin:0 0 9px; }
-.nav { display:flex; flex-direction:column; gap:5px; }
-.nav-btn { width:100%; text-align:left; border:0; border-radius:10px; display:flex; align-items:center; gap:12px; padding:11px 13px; color:#aebbd0; background:transparent; font-size:13px; font-weight:570; transition:background .18s,color .18s; }
-.nav-btn:hover { background:rgba(255,255,255,.06); color:#fff; }
-.nav-btn.active { background:#243450; color:white; box-shadow:inset 3px 0 #7890ff; }
-.nav-btn .nav-icon { width:18px; display:inline-grid; place-items:center; font-size:16px; }
-.nav-count { margin-left:auto; border-radius:7px; padding:2px 7px; background:rgba(220,89,98,.2); color:#ffabb0; font-size:10px; font-weight:750; }
-.sidebar-bottom { margin-top:auto; }
-.connection-card { margin:0 5px; border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:13px; background:rgba(255,255,255,.035); }
-.connection-head { display:flex; align-items:center; gap:8px; color:#e8eef8; font-size:12px; font-weight:650; }
-.pulse-dot { width:7px;height:7px;border-radius:50%;background:#5ed5a4;box-shadow:0 0 0 4px rgba(94,213,164,.13); }
-.connection-note { font-size:10px; line-height:1.6; color:#90a0b9; margin-top:8px; }
-.user-mini { display:flex; gap:10px; align-items:center; padding:17px 10px 0; }
-.avatar { display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:#344765;color:#eff4ff;font-size:11px;font-weight:750; flex-shrink:0; }
-.user-name { font-size:11px; font-weight:650; color:#e6edf8; }
-.user-role { font-size:10px;color:#91a1ba;margin-top:3px; }
-.main { min-width:0; }
-.topbar { height:70px; padding:0 34px; display:flex; align-items:center; justify-content:space-between; gap:18px; border-bottom:1px solid var(--border); background:var(--surface); }
-.crumb { display:flex; align-items:center; gap:9px; color:var(--muted); font-size:12px; }
-.crumb strong { color:var(--text); font-weight:670; }
-.top-actions { display:flex; align-items:center; gap:10px; }
-.demo-pill { display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border);border-radius:999px;padding:7px 10px;font-size:10px;font-weight:750;color:var(--muted);letter-spacing:.035em;white-space:nowrap; }
-.demo-pill span { width:6px;height:6px;border-radius:50%;background:#e6ad4d; }
-.icon-button { width:35px;height:35px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--muted);display:grid;place-items:center;position:relative; }
-.icon-button:hover { background:var(--surface-2); }
-.notif-dot { position:absolute;right:7px;top:7px;width:6px;height:6px;background:var(--red);border-radius:50%;border:1px solid var(--surface); }
-.content { padding:29px 34px 38px; max-width:1600px; margin:0 auto; }
-.page-heading { display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:24px; }
-.eyebrow { font-size:10px; text-transform:uppercase; letter-spacing:.14em; font-weight:780;color:var(--accent);margin-bottom:8px; }
-h1 { font-size:26px;letter-spacing:-.035em;line-height:1.2;margin:0;font-weight:760; }
-.page-description { margin:8px 0 0;color:var(--muted);font-size:12px;line-height:1.6; }
-.heading-actions { display:flex;gap:9px; flex-wrap:wrap; }
-.btn { border:1px solid var(--border); border-radius:9px; background:var(--surface); color:var(--text); padding:9px 13px; display:inline-flex; align-items:center; justify-content:center; gap:8px; font-size:11px;font-weight:700;transition:transform .12s,background .12s; white-space:nowrap; }
-.btn:hover { background:var(--surface-2); }
-.btn:active { transform:translateY(1px); }
-.btn-primary { border-color:var(--accent); background:var(--accent);color:#fff;box-shadow:0 3px 8px rgba(91,120,238,.17); }
-.btn-primary:hover { background:#4a66d8; }
-.btn-danger { border-color:transparent;background:var(--red-soft);color:var(--red); }
-.btn-sm { padding:6px 9px;font-size:10px;border-radius:7px; }
-.grid { display:grid; gap:15px; }
-.stats { grid-template-columns:repeat(4,minmax(0,1fr)); margin-bottom:18px; }
-.card { background:var(--surface);border:1px solid var(--border);border-radius:13px;box-shadow:var(--shadow);min-width:0; }
-.stat-card { padding:17px 18px 16px; }
-.stat-top { display:flex;justify-content:space-between;align-items:center;gap:12px; }
-.stat-label { font-size:11px;color:var(--muted);font-weight:620; }
-.stat-icon { width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-size:15px; }
-.stat-value { font-size:28px;font-weight:780;letter-spacing:-.045em;margin:13px 0 5px;line-height:1; }
-.stat-foot { font-size:10px;color:var(--muted); }
-.stat-foot strong { color:var(--green);font-weight:700; }
-.tone-blue { background:var(--blue-soft);color:var(--accent); }
-.tone-green { background:var(--green-soft);color:var(--green); }
-.tone-amber { background:var(--amber-soft);color:var(--amber); }
-.tone-red { background:var(--red-soft);color:var(--red); }
-.middle-grid { grid-template-columns:minmax(0,1.65fr) minmax(275px,1fr); margin-bottom:17px; }
-.card-header { display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:18px 19px 0; }
-.card-title { font-size:13px;font-weight:740;letter-spacing:-.015em; }
-.card-subtitle { color:var(--muted);font-size:10px;line-height:1.5;margin-top:5px; }
-.select-small { appearance:auto;border:1px solid var(--border);border-radius:7px;padding:6px 8px;background:var(--surface);color:var(--muted);font-size:10px; }
-.chart-wrap { padding:12px 16px 8px; }
-.chart-svg { width:100%;height:auto;display:block;overflow:visible; }
-.legend { display:flex;align-items:center;gap:14px;padding:0 19px 15px;color:var(--muted);font-size:10px; }
-.legend-key { display:inline-flex;align-items:center;gap:6px; }
-.legend-line { display:inline-block;width:14px;height:3px;border-radius:3px;background:#5b78ee; }
-.legend-line.green { background:#25b889; }
-.health-summary { padding:15px 19px 17px; }
-.health-row { display:flex;align-items:center;gap:11px;padding:12px 0;border-bottom:1px solid var(--border); }
-.health-row:last-child { border-bottom:0; }
-.health-symbol { width:34px;height:34px;display:grid;place-items:center;border-radius:10px;flex-shrink:0;font-size:14px; }
-.health-info { min-width:0;flex:1; }
-.health-name { font-size:11px;font-weight:700; }
-.health-desc { font-size:10px;color:var(--muted);margin-top:4px; }
-.health-value { font-size:11px;font-weight:760;white-space:nowrap; }
-.health-bar { height:4px;border-radius:10px;background:var(--border);margin-top:7px;overflow:hidden; }
-.health-bar span { display:block;height:100%;border-radius:10px;background:var(--green); }
-.lower-grid { grid-template-columns:minmax(0,1.5fr) minmax(275px,1fr); }
-.table-card { overflow:hidden; }
-.table-heading { padding:17px 19px;display:flex;justify-content:space-between;align-items:center;gap:10px; }
-.table-heading .view-all { border:0;background:transparent;color:var(--accent);font-size:10px;font-weight:720; }
-.table-scroll { overflow-x:auto; }
-table { width:100%;border-collapse:collapse;text-align:left;white-space:nowrap; }
-th { font-size:9px;text-transform:uppercase;letter-spacing:.075em;color:var(--muted);background:var(--surface-2);font-weight:760;padding:11px 14px;border-top:1px solid var(--border);border-bottom:1px solid var(--border); }
-td { padding:13px 14px;border-bottom:1px solid var(--border);font-size:10px; }
-tr:last-child td { border-bottom:0; }
-tbody tr:hover { background:var(--surface-2); }
-.device-cell { display:flex;align-items:center;gap:9px; }
-.device-symbol { width:29px;height:29px;border:1px solid var(--border);border-radius:8px;display:grid;place-items:center;background:var(--surface-2);font-size:12px; }
-.device-id { font-size:10px;font-weight:750; }
-.device-location { color:var(--muted);font-size:9px;margin-top:4px; }
-.status { display:inline-flex;align-items:center;gap:5px;border-radius:6px;padding:5px 7px;font-size:9px;font-weight:720; }
-.status:before { content:"";width:5px;height:5px;border-radius:50%;background:currentColor; }
-.status-ok { color:var(--green);background:var(--green-soft); }
-.status-warn { color:var(--amber);background:var(--amber-soft); }
-.status-bad { color:var(--red);background:var(--red-soft); }
-.status-neutral { color:var(--muted);background:var(--surface-2); }
-.alert-list { padding:3px 18px 8px; }
-.alert-item { display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--border); }
-.alert-item:last-child { border-bottom:0; }
-.alert-symbol { display:grid;place-items:center;width:30px;height:30px;border-radius:9px;font-size:12px;flex-shrink:0; }
-.alert-copy { min-width:0;flex:1; }
-.alert-title { font-size:10px;font-weight:730;line-height:1.4; }
-.alert-detail { font-size:9px;color:var(--muted);line-height:1.55;margin-top:4px; }
-.alert-time { font-size:9px;color:var(--muted);white-space:nowrap;margin-top:2px; }
-.empty-state { padding:28px 15px;text-align:center;color:var(--muted);font-size:11px; }
-.view { display:none; }
-.view.active { display:block; }
-.toolbar { display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-bottom:14px; }
-.search-box { min-width:210px;flex:1;max-width:360px;position:relative; }
-.search-box input { width:100%;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);padding:10px 12px 10px 34px;font-size:11px; }
-.search-icon { position:absolute;left:12px;top:10px;color:var(--muted);font-size:13px; }
-.filter-select { border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);padding:10px 11px;font-size:11px; }
-.full-table td { padding:15px 16px; }
-.full-table th { padding:12px 16px; }
-.action-link { border:0;background:transparent;color:var(--accent);font-size:10px;font-weight:730; }
-.alert-banner { padding:13px 15px;border:1px solid color-mix(in srgb, var(--amber) 30%, var(--border));background:var(--amber-soft);border-radius:10px;display:flex;gap:10px;align-items:flex-start;margin-bottom:17px;color:var(--text);font-size:11px;line-height:1.55; }
-.alert-banner strong { display:block;margin-bottom:2px; }
-.maintenance-grid { grid-template-columns:minmax(0,1.3fr) minmax(240px,.7fr);align-items:start; }
-.form-card { padding:20px; }
-.form-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:18px; }
-.field { display:flex;flex-direction:column;gap:6px; }
-.field.full { grid-column:1 / -1; }
-.field label { font-size:10px;font-weight:730;color:var(--muted); }
-.field input,.field select,.field textarea { background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px 11px;font-size:11px;width:100%; }
-.field textarea { min-height:88px;resize:vertical; }
-.form-actions { display:flex;gap:9px;justify-content:flex-end;margin-top:18px; }
-.callout { border-radius:12px;padding:18px;border:1px solid var(--border);background:var(--surface); }
-.callout h3 { font-size:12px;margin:0 0 8px; }
-.callout p { color:var(--muted);font-size:11px;line-height:1.7;margin:0; }
-.metric-list { margin-top:14px;border-top:1px solid var(--border);padding-top:10px; }
-.metric-row { display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;font-size:10px; }
-.metric-row span { color:var(--muted); }
-.metric-row strong { font-size:11px; }
-.report-grid { grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:16px; }
-.report-metric { padding:18px; }
-.report-value { font-size:25px;font-weight:780;margin:13px 0 4px;letter-spacing:-.04em; }
-.report-label { font-size:10px;color:var(--muted); }
-.report-chart { padding:18px; }
-.report-bars { display:flex;align-items:flex-end;gap:12px;height:180px;padding:15px 8px 0;border-bottom:1px solid var(--border); }
-.bar-col { height:100%;flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:7px; }
-.bar { width:min(34px,70%);border-radius:5px 5px 0 0;background:linear-gradient(180deg,#8095ff,#546fe3);min-height:4px; }
-.bar-label { color:var(--muted);font-size:9px;padding-bottom:9px; }
-.bar-val { color:var(--muted);font-size:9px; }
-.stack-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
-.tech-card { padding:18px; }
-.tech-top { display:flex;align-items:center;gap:11px;margin-bottom:11px; }
-.tech-icon { width:38px;height:38px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:17px; }
-.tech-name { font-size:12px;font-weight:760; }
-.tech-type { color:var(--muted);font-size:9px;margin-top:4px; }
-.tech-card p { color:var(--muted);font-size:10px;line-height:1.65;margin:0; }
-.requirement-list { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px; }
-.requirement { display:flex;align-items:flex-start;gap:10px;padding:13px;border:1px solid var(--border);background:var(--surface);border-radius:10px; }
-.req-check { display:grid;place-items:center;width:22px;height:22px;border-radius:7px;background:var(--green-soft);color:var(--green);font-size:12px;flex-shrink:0; }
-.req-title { font-size:11px;font-weight:730; }
-.req-desc { color:var(--muted);font-size:9px;line-height:1.55;margin-top:4px; }
-.notice { margin-top:16px;border-radius:10px;background:var(--blue-soft);padding:13px 15px;font-size:10px;line-height:1.65;color:var(--text); }
-.footer-note { margin-top:22px;color:var(--muted);font-size:9px;display:flex;justify-content:space-between;gap:10px; }
-.modal-backdrop { display:none;position:fixed;z-index:20;inset:0;background:rgba(4,10,20,.58);padding:18px;align-items:center;justify-content:center; }
-.modal-backdrop.open { display:flex; }
-.modal { width:min(520px,100%);max-height:90vh;overflow:auto;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 28px 90px rgba(0,0,0,.25); }
-.modal-header { display:flex;align-items:flex-start;justify-content:space-between;gap:15px;padding:20px 22px;border-bottom:1px solid var(--border); }
-.modal-header h2 { font-size:16px;margin:0;letter-spacing:-.025em; }
-.modal-header p { margin:6px 0 0;color:var(--muted);font-size:10px;line-height:1.5; }
-.modal-body { padding:19px 22px 22px; }
-.close-btn { border:0;background:transparent;color:var(--muted);font-size:21px;line-height:1;padding:0 2px; }
-.toast-region { position:fixed;z-index:50;bottom:22px;right:22px;display:flex;flex-direction:column;gap:8px;max-width:min(360px,calc(100vw - 35px)); }
-.toast { padding:12px 15px;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:10px;box-shadow:0 12px 35px rgba(0,0,0,.14);font-size:11px;line-height:1.5;animation:toastIn .2s ease-out; }
-.toast.error { border-left-color:var(--red); }
-@keyframes toastIn { from { opacity:0;transform:translateY(6px); } to {opacity:1;transform:translateY(0);} }
-.mobile-menu { display:none; }
-@media (max-width:1100px) { .shell {grid-template-columns:210px minmax(0,1fr);} .content{padding:25px 23px 32px;} .topbar{padding:0 23px;} .stats{grid-template-columns:repeat(2,minmax(0,1fr));} .middle-grid,.lower-grid{grid-template-columns:minmax(0,1fr);} .health-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:18px;} .health-row:nth-last-child(2){border-bottom:0;} }
-@media (max-width:720px) { .shell{grid-template-columns:1fr;} .sidebar{display:none;} .topbar{height:60px;padding:0 15px;} .mobile-menu{display:grid;} .crumb{font-size:11px;} .demo-pill{display:none;} .content{padding:22px 14px 28px;} .page-heading{flex-direction:column;align-items:stretch;margin-bottom:20px;} h1{font-size:23px;} .heading-actions{width:100%;} .heading-actions .btn{flex:1;} .stats{gap:10px;} .stat-card{padding:14px;} .stat-value{font-size:25px;} .middle-grid,.lower-grid{gap:12px;} .health-summary{display:block;} .health-row:nth-last-child(2){border-bottom:1px solid var(--border);} .report-grid{grid-template-columns:1fr;} .stack-grid,.requirement-list{grid-template-columns:1fr;} .form-grid{grid-template-columns:1fr;} .field.full{grid-column:auto;} .footer-note{flex-direction:column;} .mobile-nav{display:flex;gap:6px;overflow-x:auto;padding:10px 14px;background:var(--sidebar);scrollbar-width:none;} .mobile-nav .nav-btn{white-space:nowrap;width:auto;flex-shrink:0;padding:9px 11px;font-size:11px;} .mobile-nav .nav-btn.active{box-shadow:inset 0 -2px #7890ff;} }
-@media (prefers-reduced-motion: reduce) { *,*::before,*::after {animation-duration:.01ms !important;transition-duration:.01ms !important;scroll-behavior:auto !important;} }
-</style>
-</head>
-<body>
-<div id="app">
-  <div class="shell">
-    <aside class="sidebar" aria-label="Navegação principal">
-      <div class="brand"><div class="brand-mark" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3v18M5 7l7-4 7 4M5 17l7 4 7-4M7 12h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/></svg></div><div><div class="brand-name">TRACE-REP</div><div class="brand-caption">MONITORAMENTO LITE</div></div></div>
-      <div><div class="nav-label">Workspace</div><nav class="nav" id="sideNav">
-        <button class="nav-btn active" data-view="dashboard"><span class="nav-icon">⌂</span>Visão geral</button>
-        <button class="nav-btn" data-view="repeaters"><span class="nav-icon">▤</span>Repetidoras</button>
-        <button class="nav-btn" data-view="alerts"><span class="nav-icon">♧</span>Central de alertas<span class="nav-count" id="navAlertCount">2</span></button>
-        <button class="nav-btn" data-view="maintenance"><span class="nav-icon">⌁</span>Manutenções</button>
-        <button class="nav-btn" data-view="reports"><span class="nav-icon">▥</span>Relatórios</button>
-      </nav></div>
-      <div><div class="nav-label">Projeto</div><nav class="nav"><button class="nav-btn" data-view="requirements"><span class="nav-icon">◈</span>Stack & requisitos</button></nav></div>
-      <div class="sidebar-bottom"><div class="connection-card"><div class="connection-head"><span class="pulse-dot"></span>Ambiente de demonstração</div><div class="connection-note">Dados fictícios para validar o fluxo de uso. Serviços externos ainda não conectados.</div></div><div class="user-mini"><div class="avatar">PI</div><div><div class="user-name">Equipe TRACE-REP</div><div class="user-role">Projeto Integrador</div></div></div></div>
-    </aside>
-    <main class="main">
-      <header class="topbar"><div class="crumb"><button class="icon-button mobile-menu" id="mobileToggle" aria-label="Alternar navegação">☰</button><span>TRACE-REP LITE</span><span aria-hidden="true">/</span><strong id="crumbTitle">Visão geral</strong></div><div class="top-actions"><div class="demo-pill"><span></span>PROTÓTIPO INTERATIVO</div><button class="icon-button" id="topAlerts" aria-label="Ir para alertas" title="Central de alertas">♧<span class="notif-dot"></span></button><div class="avatar" aria-label="Equipe do Projeto Integrador">PI</div></div></header>
-      <div class="mobile-nav" id="mobileNav" style="display:none" aria-label="Navegação móvel"></div>
-      <div class="content">
-        <section class="view active" id="view-dashboard">
-          <div class="page-heading"><div><div class="eyebrow">Centro de operações / São Paulo</div><h1>Visão geral</h1><p class="page-description">Acompanhe o estado das repetidoras, as medições recentes e os eventos que precisam de atenção.</p></div><div class="heading-actions"><button class="btn" id="dashboardExport">↓ Exportar dados</button><button class="btn btn-primary" id="simulateFault">＋ Simular falha</button></div></div>
-          <div class="grid stats" id="statsGrid"></div>
-          <div class="grid middle-grid">
-            <article class="card"><div class="card-header"><div><div class="card-title">Telemetria dos equipamentos</div><div class="card-subtitle">Temperatura média e nível simulado de saída · últimas 12 horas</div></div><select class="select-small" id="chartRange" aria-label="Período do gráfico"><option value="12">Últimas 12h</option><option value="6">Últimas 6h</option><option value="24">Últimas 24h</option></select></div><div class="chart-wrap"><svg class="chart-svg" id="telemetryChart" viewBox="0 0 620 235" role="img" aria-label="Gráfico de telemetria de exemplo"></svg></div><div class="legend"><span class="legend-key"><i class="legend-line"></i>Temperatura (°C)</span><span class="legend-key"><i class="legend-line green"></i>Saída simulada (%)</span></div></article>
-            <article class="card"><div class="card-header"><div><div class="card-title">Saúde do sistema</div><div class="card-subtitle">Resumo atualizado com os dados de demonstração</div></div><span class="status status-ok">Ativo</span></div><div class="health-summary" id="healthSummary"></div></article>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="styles.css">
+    <title>TRACE-REP LITE</title>
+  </head>
+  <body>
+    <div id="app">
+      <div class="shell">
+        
+        <!-- Painel lateral -->
+        <aside class="sidebar" aria-label="Navegação principal">
+          <div class="brand">
+
+            <!-- Desenho da logo através de svg -->
+            <div class="brand-mark" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M12 3v18M5 7l7-4 7 4M5 17l7 4 7-4M7 12h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/>
+              </svg>
+            </div>
+            <div>
+              <div class="brand-name">TRACE-REP</div><div class="brand-caption">MONITORAMENTO LITE</div>
+            </div>
           </div>
-          <div class="grid lower-grid">
-            <article class="card table-card"><div class="table-heading"><div><div class="card-title">Repetidoras monitoradas</div><div class="card-subtitle">Equipamentos cadastrados no protótipo</div></div><button class="view-all" data-goto="repeaters">Ver todas →</button></div><div class="table-scroll"><table><thead><tr><th>Equipamento</th><th>Status</th><th>Temperatura</th><th>Tensão</th><th>Última atualização</th></tr></thead><tbody id="dashboardRepeaters"></tbody></table></div></article>
-            <article class="card"><div class="table-heading"><div><div class="card-title">Eventos recentes</div><div class="card-subtitle">Alertas e mudanças de estado</div></div><button class="view-all" data-goto="alerts">Ver central →</button></div><div class="alert-list" id="recentAlerts"></div></article>
+          
+          <!-- Definição dos botões que redirecionam para diferentes páginas -->
+          <div>
+            <div class="nav-label">Workspace</div><nav class="nav" id="sideNav">
+            <button class="nav-btn active" data-view="dashboard"><span class="nav-icon">⌂</span>Visão geral</button>
+            <button class="nav-btn" data-view="repeaters"><span class="nav-icon">▤</span>Repetidoras</button>
+            
+            <!-- Tem que reescrever o botão alerts dinâmicamente dps de estabelecer o banco de dados -->
+            <button class="nav-btn" data-view="alerts"><span class="nav-icon">♧</span>Central de alertas<span class="nav-count" id="navAlertCount">2</span></button>
+            <button class="nav-btn" data-view="maintenance"><span class="nav-icon">⌁</span>Manutenções</button>
+            <button class="nav-btn" data-view="reports"><span class="nav-icon">▥</span>Relatórios</button>
+          </nav></div>
+          <div>
+            <div class="nav-label">Projeto</div>
+            <nav class="nav">
+              <button class="nav-btn" data-view="requirements"><span class="nav-icon">◈</span>Stack & requisitos</button>
+            </nav>
           </div>
-        </section>
-        <section class="view" id="view-repeaters">
-          <div class="page-heading"><div><div class="eyebrow">Inventário</div><h1>Repetidoras</h1><p class="page-description">Cadastre os equipamentos e acompanhe a última leitura registrada.</p></div><div class="heading-actions"><button class="btn" id="repeatersExport">↓ Exportar CSV</button><button class="btn btn-primary" id="newRepeater">＋ Nova repetidora</button></div></div>
-          <div class="toolbar"><div class="search-box"><span class="search-icon">⌕</span><input id="repeaterSearch" type="search" placeholder="Buscar por ID ou localização…" aria-label="Buscar repetidoras"></div><select id="statusFilter" class="filter-select" aria-label="Filtrar por status"><option value="all">Todos os status</option><option value="ok">Normal</option><option value="warn">Atenção</option><option value="bad">Offline</option></select><span class="demo-pill"><span></span>Dados de demonstração</span></div>
-          <article class="card table-card"><div class="table-scroll"><table class="full-table"><thead><tr><th>Equipamento</th><th>Localização</th><th>Status</th><th>Temperatura</th><th>Tensão</th><th>Sinal simulado</th><th>Ações</th></tr></thead><tbody id="allRepeaters"></tbody></table></div><div id="repeaterEmpty" class="empty-state" style="display:none">Nenhuma repetidora encontrada para essa busca.</div></article>
-          <div class="notice">ℹ️ <strong>Sobre os sinais:</strong> o indicador de saída é uma simulação do protótipo; não representa medição real de radiofrequência ou VSWR.</div>
-        </section>
-        <section class="view" id="view-alerts">
-          <div class="page-heading"><div><div class="eyebrow">Eventos e ocorrências</div><h1>Central de alertas</h1><p class="page-description">Visualize anomalias detectadas e marque ocorrências como reconhecidas.</p></div><div class="heading-actions"><button class="btn" id="ackAll">✓ Reconhecer todos</button><button class="btn btn-primary" id="alertSimulate">＋ Gerar alerta de teste</button></div></div>
-          <div class="alert-banner"><span style="font-size:16px">ⓘ</span><div><strong>Modo de demonstração</strong>Os alertas desta tela são gerados por dados fictícios e simulações manuais. Nenhuma repetidora real está sendo monitorada.</div></div>
-          <div class="toolbar"><select class="filter-select" id="alertFilter" aria-label="Filtrar alertas"><option value="all">Todos os alertas</option><option value="active">Não reconhecidos</option><option value="ack">Reconhecidos</option></select><select class="filter-select" id="alertSeverity" aria-label="Filtrar severidade"><option value="all">Todas as severidades</option><option value="critical">Crítico</option><option value="warning">Atenção</option><option value="info">Informativo</option></select></div>
-          <article class="card table-card"><div class="table-scroll"><table class="full-table"><thead><tr><th>Ocorrência</th><th>Equipamento</th><th>Severidade</th><th>Data e hora</th><th>Estado</th><th>Ação</th></tr></thead><tbody id="alertsTable"></tbody></table></div><div id="alertsEmpty" class="empty-state" style="display:none">Nenhum alerta corresponde aos filtros.</div></article>
-        </section>
-        <section class="view" id="view-maintenance">
-          <div class="page-heading"><div><div class="eyebrow">Histórico de campo</div><h1>Manutenções</h1><p class="page-description">Registre inspeções, reparos e intervenções vinculadas a cada equipamento.</p></div><div class="heading-actions"><button class="btn" id="maintenanceExport">↓ Exportar CSV</button><button class="btn btn-primary" id="newMaintenance">＋ Registrar manutenção</button></div></div>
-          <div class="grid stats" id="maintenanceStats"></div>
-          <article class="card table-card"><div class="table-heading"><div><div class="card-title">Histórico de serviços</div><div class="card-subtitle">Registros armazenados nesta sessão de demonstração</div></div><div class="search-box" style="max-width:240px"><span class="search-icon">⌕</span><input id="maintenanceSearch" type="search" placeholder="Buscar técnico ou equipamento…" aria-label="Buscar manutenções"></div></div><div class="table-scroll"><table class="full-table"><thead><tr><th>Protocolo</th><th>Equipamento</th><th>Tipo de serviço</th><th>Técnico</th><th>Data</th><th>Observação</th></tr></thead><tbody id="maintenanceTable"></tbody></table></div><div id="maintenanceEmpty" class="empty-state" style="display:none">Nenhuma manutenção encontrada.</div></article>
-          <div class="notice">A versão de demonstração mantém os registros apenas durante a sessão. A persistência definitiva será ligada ao banco de dados na etapa de integração.</div>
-        </section>
-        <section class="view" id="view-reports">
-          <div class="page-heading"><div><div class="eyebrow">Indicadores</div><h1>Relatórios</h1><p class="page-description">Resumo visual de disponibilidade, ocorrências e atividades do protótipo.</p></div><div class="heading-actions"><button class="btn btn-primary" id="reportExport">↓ Baixar relatório CSV</button></div></div>
-          <div class="grid report-grid" id="reportStats"></div>
-          <div class="grid middle-grid"><article class="card report-chart"><div class="card-title">Alertas por categoria</div><div class="card-subtitle">Distribuição dos eventos de demonstração</div><div class="report-bars" id="alertBars"></div></article><article class="card"><div class="card-header"><div><div class="card-title">Indicadores de operação</div><div class="card-subtitle">Baseados no estado atual do protótipo</div></div></div><div class="health-summary" id="reportHealth"></div></article></div>
-          <div class="notice">Os relatórios são calculados localmente a partir dos dados ilustrativos desta página. Não representam métricas históricas reais.</div>
-        </section>
-        <section class="view" id="view-requirements">
-          <div class="page-heading"><div><div class="eyebrow">Arquitetura do projeto</div><h1>Stack & requisitos</h1><p class="page-description">Visão planejada das tecnologias que vão compor a versão completa do PI.</p></div><div class="heading-actions"><span class="demo-pill"><span></span>Planejamento técnico</span></div></div>
-          <div class="grid stack-grid" style="margin-bottom:17px">
-            <article class="card tech-card"><div class="tech-top"><div class="tech-icon">⚛</div><div><div class="tech-name">React + JavaScript</div><div class="tech-type">Interface web · Planejado</div></div></div><p>Construção das páginas, formulários, gráficos, navegação e componentes acessíveis do sistema.</p></article>
-            <article class="card tech-card"><div class="tech-top"><div class="tech-icon">▦</div><div><div class="tech-name">Supabase + PostgreSQL</div><div class="tech-type">Banco de dados e serviços · Planejado</div></div></div><p>Armazenamento de equipamentos, medições, alertas, usuários e histórico de manutenções.</p></article>
-            <article class="card tech-card"><div class="tech-top"><div class="tech-icon">☁</div><div><div class="tech-name">Vercel + Supabase</div><div class="tech-type">Nuvem · Planejado</div></div></div><p>Hospedagem da interface e dos serviços de dados, com acesso remoto após configurar os ambientes.</p></article>
-            <article class="card tech-card"><div class="tech-top"><div class="tech-icon">⌘</div><div><div class="tech-name">API + MQTT</div><div class="tech-type">Integração de dados · Planejado</div></div></div><p>API para consultar e gerenciar registros do sistema; MQTT para telemetria enviada pelo ESP32.</p></article>
-            <article class="card tech-card"><div class="tech-top"><div class="tech-icon">⑂</div><div><div class="tech-name">Git + GitHub</div><div class="tech-type">Controle de versão · Planejado</div></div></div><p>Histórico de alterações, branches, revisão de código e trabalho colaborativo entre integrantes.</p></article>
-            <article class="card tech-card"><div class="tech-top"><div class="tech-icon">✓</div><div><div class="tech-name">Vitest + Testing Library + axe</div><div class="tech-type">Testes e acessibilidade · Planejado</div></div></div><p>Testes unitários e de componentes, verificação de fluxos essenciais e análise automatizada de acessibilidade.</p></article>
+
+          <!-- Aviso sobre o projeto -->
+          <div class="sidebar-bottom">
+            <div class="connection-card">
+              <div class="connection-head">
+                <span class="pulse-dot"></span>
+                Ambiente de demonstração
+              </div>
+              <div class="connection-note">Dados fictícios para validar o fluxo de uso. Serviços externos ainda não conectados.</div>
+            </div>
+            <div class="user-mini">
+              <div class="avatar">PI</div>
+            <div>
+              <div class="user-name">Grupo 8</div>
+              <div class="user-role">Projeto Integrador</div>
+            </div>
+            </div>
           </div>
-          <article class="card" style="padding:19px;margin-bottom:16px"><div class="card-title" style="margin-bottom:5px">Requisitos do PI e como demonstrar</div><div class="card-subtitle" style="margin-bottom:15px">A lista abaixo é o plano de atendimento, não uma declaração de que as integrações já estão concluídas.</div><div class="requirement-list">
-            <div class="requirement"><div class="req-check">✓</div><div><div class="req-title">Framework web</div><div class="req-desc">Interface planejada em React com componentes reutilizáveis.</div></div></div>
-            <div class="requirement"><div class="req-check">✓</div><div><div class="req-title">JavaScript</div><div class="req-desc">Lógica de interface, validação e chamadas à API.</div></div></div>
-            <div class="requirement"><div class="req-check">✓</div><div><div class="req-title">Banco de dados</div><div class="req-desc">PostgreSQL com tabelas relacionadas e persistência real.</div></div></div>
-            <div class="requirement"><div class="req-check">✓</div><div><div class="req-title">Nuvem</div><div class="req-desc">Aplicação e serviços publicados, com acesso verificado.</div></div></div>
-            <div class="requirement"><div class="req-check">✓</div><div><div class="req-title">Uso de API</div><div class="req-desc">Endpoints ou API gerenciada para operações do sistema.</div></div></div>
-            <div class="requirement"><div class="req-check">✓</div><div><div class="req-title">Acessibilidade</div><div class="req-desc">Teclado, rótulos, contraste, foco visível e leitores de tela.</div></div></div>
-            <div class="requirement"><div class="req-check">✓</div><div><div class="req-title">Controle de versão</div><div class="req-desc">Repositório Git com commits registrados pela equipe.</div></div></div>
-            <div class="requirement"><div class="req-check">✓</div><div><div class="req-title">Testes</div><div class="req-desc">Testes automatizados e evidências de testes funcionais.</div></div></div>
-          </div></article>
-          <div class="notice"><strong>Próxima fase técnica:</strong> transformar este protótipo demonstrativo em projeto React, criar o banco remoto, configurar autenticação e segurança, conectar API e validar publicação. O preview atual não está conectado a esses serviços externos.</div>
-        </section>
-        <div class="footer-note"><span>TRACE-REP LITE · Projeto Integrador</span><span>Protótipo interativo · Dados fictícios</span></div>
+        </aside>
+
+        <!-- Parte principal do site; onde são exibidas as informações -->
+        <main class="main">
+          <header class="topbar">
+
+            <!-- Crumble button; não aparece, precisa consertar -->
+            <div class="crumb">
+              <button class="icon-button mobile-menu" id="mobileToggle" aria-label="Alternar navegação">☰</button>
+              <span>TRACE-REP LITE</span>
+              <span aria-hidden="true">/</span>
+              <strong id="crumbTitle">Visão geral</strong>
+            </div>
+
+            <div class="top-actions">
+              <div class="demo-pill">
+                <!-- Esse span tá sendo usado pra criar uma bolinha amarela do lado do texto
+                Seria interessante criar ela diretamente aqui e remover o estilo dele do css. -->
+                <span></span>PROTÓTIPO INTERATIVO
+              </div>
+
+              <!-- Me parece inútil ter um botão que redireciona pra central de alertas aqui se já tem um no painel lateral -->
+                <button class="icon-button" id="topAlerts" aria-label="Ir para alertas" title="Central de alertas">
+                  ♧
+                  
+                  <!-- Se o botão for removido, tbm será possível remover este estilo do css -->
+                  <span class="notif-dot"></span>
+                </button>
+                
+                <!-- Seria interessante transformar isso em uma área de usuário, sla algo simples
+                tipo o nome e um botão de deslogar -->
+                <div class="avatar" aria-label="Equipe do Projeto Integrador">PI</div>
+              </div>
+          </header>
+
+          <!-- Possível div desnecessária -->
+          <div class="mobile-nav" id="mobileNav" style="display:none" aria-label="Navegação móvel"></div>
+
+
+          <div class="content">
+            
+            <!-- Página de Visão Geral -->
+            <section class="view active" id="view-dashboard">
+              <div class="page-heading">
+                <div>
+                  <div class="eyebrow">Centro de operações / São Paulo</div>
+                  <h1>Visão geral</h1>
+                  <p class="page-description">Acompanhe o estado das repetidoras, as medições recentes e os eventos que precisam de atenção.</p>
+                </div>
+                <div class="heading-actions">
+                  <button class="btn" id="dashboardExport">↓ Exportar dados</button>
+                  <button class="btn btn-primary" id="simulateFault">＋ Simular falha</button>
+                </div>
+              </div>
+
+              <!-- Possível div desnecessária -->
+              <div class="grid stats" id="statsGrid"></div>
+              
+              <!-- As quatro seções inferiores da página são representadas aqui cada uma por um artigo -->
+              <div class="grid middle-grid">
+                
+                <!--  -->
+                <article class="card">
+                  <div class="card-header">
+                    <div>
+                      <div class="card-title">Telemetria dos equipamentos</div>
+                      <div class="card-subtitle">Temperatura média e nível simulado de saída · últimas 12 horas</div>
+                    </div>
+                    <select class="select-small" id="chartRange" aria-label="Período do gráfico">
+                      <option value="12">Últimas 12h</option>
+                      <option value="6">Últimas 6h</option>
+                      <option value="24">Últimas 24h</option>
+                    </select>
+                  </div>
+                  <div class="chart-wrap">
+                    <svg class="chart-svg" id="telemetryChart" viewBox="0 0 620 235" role="img" aria-label="Gráfico de telemetria de exemplo"></svg>
+                  </div>
+                  <div class="legend">
+                    <span class="legend-key">
+                      <i class="legend-line"></i>Temperatura (°C)
+                    </span>
+                    <span class="legend-key">
+                      <i class="legend-line green"></i>Saída simulada (%)
+                    </span>
+                  </div>
+                </article>
+
+                <!--  -->
+                <article class="card">
+                  <div class="card-header">
+                    <div>
+                      <div class="card-title">Saúde do sistema</div>
+                      <div class="card-subtitle">Resumo atualizado com os dados de demonstração</div>
+                    </div>
+                    <span class="status status-ok">Ativo</span>
+                  </div>
+                  <div class="health-summary" id="healthSummary"></div>
+                </article>
+
+              </div>
+              <div class="grid lower-grid">
+
+                <!--  -->
+                <article class="card table-card">
+                  <div class="table-heading">
+                    <div>
+                      <div class="card-title">Repetidoras monitoradas</div>
+                      <div class="card-subtitle">Equipamentos cadastrados no protótipo</div>
+                    </div>
+                    <button class="view-all" data-goto="repeaters">Ver todas →</button>
+                  </div>
+                  <div class="table-scroll">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Equipamento</th>
+                          <th>Status</th>
+                          <th>Temperatura</th>
+                          <th>Tensão</th>
+                          <th>Última atualização</th>
+                        </tr>
+                      </thead>
+                      <tbody id="dashboardRepeaters"></tbody>
+                    </table>
+                  </div>
+                </article>
+
+                <!--  -->
+                <article class="card">
+                  <div class="table-heading">
+                    <div>
+                      <div class="card-title">Eventos recentes</div>
+                      <div class="card-subtitle">Alertas e mudanças de estado</div>
+                    </div>
+                    <button class="view-all" data-goto="alerts">Ver central →</button>
+                  </div>
+                  <div class="alert-list" id="recentAlerts"></div>
+                </article>
+
+              </div>
+            </section>
+            
+            <!-- Página de Repetidoras -->
+            <section class="view" id="view-repeaters">
+              <div class="page-heading">
+                <div>
+                  <div class="eyebrow">Inventário</div>
+                  <h1>Repetidoras</h1>
+                  <p class="page-description">Cadastre os equipamentos e acompanhe a última leitura registrada.</p>
+                </div>
+                <div class="heading-actions">
+                  <button class="btn" id="repeatersExport">↓ Exportar CSV</button>
+                  <button class="btn btn-primary" id="newRepeater">＋ Nova repetidora</button>
+                </div>
+              </div>
+              
+              <div class="toolbar">
+                <div class="search-box">
+                  <span class="search-icon">⌕</span>
+                  <input id="repeaterSearch" type="search" placeholder="Buscar por ID ou localização…" aria-label="Buscar repetidoras">
+                </div>
+                <select id="statusFilter" class="filter-select" aria-label="Filtrar por status">
+                  <option value="all">Todos os status</option>
+                  <option value="ok">Normal</option>
+                  <option value="warn">Atenção</option>
+                  <option value="bad">Offline</option>
+                </select>
+                <span class="demo-pill"><span></span>Dados de demonstração</span>
+              </div>
+              <article class="card table-card">
+                <div class="table-scroll">
+                  <table class="full-table">
+                    <thead>
+                      <tr>
+                        <th>Equipamento</th>
+                        <th>Localização</th>
+                        <th>Status</th>
+                        <th>Temperatura</th>
+                        <th>Tensão</th>
+                        <th>Sinal simulado</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody id="allRepeaters"></tbody>
+                  </table>
+                </div>
+                <div id="repeaterEmpty" class="empty-state" style="display:none">Nenhuma repetidora encontrada para essa busca.</div>
+              </article>
+              <div class="notice">
+                ℹ️ <strong>Sobre os sinais:</strong> o indicador de saída é uma simulação do protótipo; não representa medição real de radiofrequência ou VSWR.
+              </div>
+            </section>
+
+            <!-- Página de Central de alertas -->
+            <section class="view" id="view-alerts">
+              <div class="page-heading">
+                <div>
+                  <div class="eyebrow">Eventos e ocorrências</div>
+                  <h1>Central de alertas</h1>
+                  <p class="page-description">Visualize anomalias detectadas e marque ocorrências como reconhecidas.</p>
+                </div>
+                <div class="heading-actions">
+                  <button class="btn" id="ackAll">✓ Reconhecer todos</button>
+                  <button class="btn btn-primary" id="alertSimulate">＋ Gerar alerta de teste</button>
+                </div>
+              </div>
+              <div class="alert-banner">
+                <span style="font-size:16px">ⓘ</span>
+                <div>
+                  <strong>Modo de demonstração</strong>Os alertas desta tela são gerados por dados fictícios e simulações manuais. Nenhuma repetidora real está sendo monitorada.
+                </div>
+              </div>
+              <div class="toolbar">
+                <select class="filter-select" id="alertFilter" aria-label="Filtrar alertas">
+                  <option value="all">Todos os alertas</option>
+                  <option value="active">Não reconhecidos</option>
+                  <option value="ack">Reconhecidos</option>
+                </select>
+                <select class="filter-select" id="alertSeverity" aria-label="Filtrar severidade">
+                  <option value="all">Todas as severidades</option>
+                  <option value="critical">Crítico</option>
+                  <option value="warning">Atenção</option>
+                  <option value="info">Informativo</option>
+                </select>
+              </div>
+              <article class="card table-card">
+                <div class="table-scroll">
+                  <table class="full-table">
+                    <thead>
+                      <tr>
+                        <th>Ocorrência</th>
+                        <th>Equipamento</th>
+                        <th>Severidade</th>
+                        <th>Data e hora</th>
+                        <th>Estado</th>
+                        <th>Ação</th>
+                      </tr>
+                    </thead>
+                    <tbody id="alertsTable"></tbody>
+                  </table>
+                </div>
+                <div id="alertsEmpty" class="empty-state" style="display:none">Nenhum alerta corresponde aos filtros.</div>
+              </article>
+            </section>
+
+            <!-- Página de manutenções -->
+            <section class="view" id="view-maintenance">
+              <div class="page-heading">
+                <div>
+                  <div class="eyebrow">Histórico de campo</div>
+                  <h1>Manutenções</h1>
+                  <p class="page-description">Registre inspeções, reparos e intervenções vinculadas a cada equipamento.</p>
+                </div>
+                <div class="heading-actions">
+                  <button class="btn" id="maintenanceExport">↓ Exportar CSV</button>
+                  <button class="btn btn-primary" id="newMaintenance">＋ Registrar manutenção</button>
+                </div>
+              </div>
+
+              <!--  -->
+              <div class="grid stats" id="maintenanceStats"></div>
+              <article class="card table-card">
+                <div class="table-heading">
+                  <div>
+                    <div class="card-title">Histórico de serviços</div>
+                    <div class="card-subtitle">Registros armazenados nesta sessão de demonstração</div>
+                  </div>
+                  <div class="search-box" style="max-width:240px">
+                    <span class="search-icon">⌕</span>
+                    <input id="maintenanceSearch" type="search" placeholder="Buscar técnico ou equipamento…" aria-label="Buscar manutenções">
+                  </div>
+                </div>
+                <div class="table-scroll">
+                  <table class="full-table">
+                    <thead>
+                      <tr>
+                        <th>Protocolo</th>
+                        <th>Equipamento</th>
+                        <th>Tipo de serviço</th>
+                        <th>Técnico</th>
+                        <th>Data</th>
+                        <th>Observação</th>
+                      </tr>
+                    </thead>
+                    <tbody id="maintenanceTable"></tbody>
+                  </table>
+                </div>
+                <div id="maintenanceEmpty" class="empty-state" style="display:none">Nenhuma manutenção encontrada.</div>
+              </article>
+              <div class="notice">A versão de demonstração mantém os registros apenas durante a sessão. A persistência definitiva será ligada ao banco de dados na etapa de integração.</div>
+            </section>
+
+            <!-- Página de Relatórios -->
+            <section class="view" id="view-reports">
+              <div class="page-heading">
+                <div>
+                  <div class="eyebrow">Indicadores</div>
+                  <h1>Relatórios</h1>
+                  <p class="page-description">Resumo visual de disponibilidade, ocorrências e atividades do protótipo.</p>
+                </div>
+                <div class="heading-actions">
+                  <button class="btn btn-primary" id="reportExport">↓ Baixar relatório CSV</button>
+                </div>
+              </div>
+              <div class="grid report-grid" id="reportStats"></div>
+              <div class="grid middle-grid">
+                <article class="card report-chart">
+                  <div class="card-title">Alertas por categoria</div>
+                  <div class="card-subtitle">Distribuição dos eventos de demonstração</div>
+                  <div class="report-bars" id="alertBars"></div>
+                </article>
+                <article class="card">
+                  <div class="card-header">
+                    <div>
+                      <div class="card-title">Indicadores de operação</div>
+                      <div class="card-subtitle">Baseados no estado atual do protótipo</div>
+                    </div>
+                  </div>
+                  <div class="health-summary" id="reportHealth"></div>
+                </article>
+              </div>
+              <div class="notice">
+                Os relatórios são calculados localmente a partir dos dados ilustrativos desta página. Não representam métricas históricas reais.
+              </div>
+            </section>
+
+            <!-- Página de Stack e Requisitos -->
+            <section class="view" id="view-requirements">
+              <div class="page-heading">
+                <div>
+                  <div class="eyebrow">Arquitetura do projeto</div>
+                  <h1>Stack & requisitos</h1>
+                  <p class="page-description">Visão planejada das tecnologias que vão compor a versão completa do PI.</p>
+                </div>
+                <div class="heading-actions">
+                  <span class="demo-pill"><span></span>Planejamento técnico</span>
+                </div>
+              </div>
+              <div class="grid stack-grid" style="margin-bottom:17px">
+                <article class="card tech-card">
+                  <div class="tech-top">
+                    <div class="tech-icon">⚛</div>
+                    <div>
+                      <div class="tech-name">React + JavaScript</div>
+                      <div class="tech-type">Interface web · Planejado</div>
+                    </div>
+                  </div>
+                  <p>Construção das páginas, formulários, gráficos, navegação e componentes acessíveis do sistema.</p>
+                </article>
+                <article class="card tech-card">
+                  <div class="tech-top">
+                    <div class="tech-icon">▦</div>
+                    <div>
+                      <div class="tech-name">Supabase + PostgreSQL</div>
+                      <div class="tech-type">Banco de dados e serviços · Planejado</div>
+                    </div>
+                  </div>
+                  <p>Armazenamento de equipamentos, medições, alertas, usuários e histórico de manutenções.</p>
+                </article>
+                <article class="card tech-card">
+                  <div class="tech-top">
+                    <div class="tech-icon">☁</div>
+                    <div>
+                      <div class="tech-name">Vercel + Supabase</div>
+                      <div class="tech-type">Nuvem · Planejado</div>
+                    </div></div><p>Hospedagem da interface e dos serviços de dados, com acesso remoto após configurar os ambientes.</p>
+                  </article>
+                <article class="card tech-card">
+                  <div class="tech-top">
+                    <div class="tech-icon">⌘</div>
+                    <div><div class="tech-name">API + MQTT</div>
+                    <div class="tech-type">Integração de dados · Planejado</div>
+                  </div>
+                </div>
+                <p>API para consultar e gerenciar registros do sistema; MQTT para telemetria enviada pelo ESP32.</p>
+              </article>
+                <article class="card tech-card">
+                  <div class="tech-top">
+                    <div class="tech-icon">⑂</div>
+                    <div>
+                      <div class="tech-name">Git + GitHub</div>
+                      <div class="tech-type">Controle de versão · Planejado</div>
+                    </div>
+                  </div>
+                  <p>Histórico de alterações, branches, revisão de código e trabalho colaborativo entre integrantes.</p>
+                </article>
+                <article class="card tech-card">
+                  <div class="tech-top">
+                    <div class="tech-icon">✓</div>
+                    <div>
+                      <div class="tech-name">Vitest + Testing Library + axe</div>
+                      <div class="tech-type">Testes e acessibilidade · Planejado</div>
+                    </div>
+                  </div>
+                  <p>Testes unitários e de componentes, verificação de fluxos essenciais e análise automatizada de acessibilidade.</p>
+                </article>
+              </div>
+              <article class="card" style="padding:19px;margin-bottom:16px">
+                <div class="card-title" style="margin-bottom:5px">Requisitos do PI e como demonstrar</div>
+                <div class="card-subtitle" style="margin-bottom:15px">
+                  A lista abaixo é o plano de atendimento, não uma declaração de que as integrações já estão concluídas.
+                </div>
+                <div class="requirement-list">
+                <div class="requirement">
+                  <div class="req-check">✓</div>
+                  <div>
+                    <div class="req-title">Framework web</div>
+                    <div class="req-desc">Interface planejada em React com componentes reutilizáveis.</div>
+                  </div>
+                </div>
+                <div class="requirement">
+                  <div class="req-check">✓</div>
+                  <div>
+                    <div class="req-title">JavaScript</div>
+                    <div class="req-desc">Lógica de interface, validação e chamadas à API.</div>
+                  </div>
+                </div>
+                <div class="requirement">
+                  <div class="req-check">✓</div>
+                  <div>
+                    <div class="req-title">Banco de dados</div>
+                    <div class="req-desc">PostgreSQL com tabelas relacionadas e persistência real.</div>
+                  </div>
+                </div>
+                <div class="requirement">
+                  <div class="req-check">✓</div>
+                  <div>
+                    <div class="req-title">Nuvem</div>
+                    <div class="req-desc">Aplicação e serviços publicados, com acesso verificado.</div>
+                  </div>
+                </div>
+                <div class="requirement">
+                  <div class="req-check">✓</div>
+                  <div>
+                    <div class="req-title">Uso de API</div>
+                    <div class="req-desc">Endpoints ou API gerenciada para operações do sistema.</div>
+                  </div>
+                </div>
+                <div class="requirement">
+                  <div class="req-check">✓</div>
+                  <div>
+                    <div class="req-title">Acessibilidade</div>
+                    <div class="req-desc">Teclado, rótulos, contraste, foco visível e leitores de tela.</div>
+                  </div>
+                </div>
+                <div class="requirement">
+                  <div class="req-check">✓</div>
+                  <div>
+                    <div class="req-title">Controle de versão</div>
+                    <div class="req-desc">Repositório Git com commits registrados pela equipe.</div>
+                  </div>
+                </div>
+                <div class="requirement">
+                  <div class="req-check">✓</div>
+                  <div>
+                    <div class="req-title">Testes</div>
+                    <div class="req-desc">Testes automatizados e evidências de testes funcionais.</div>
+                  </div>
+                </div>
+              </div>
+            </article>
+              <div class="notice">
+                <strong>Próxima fase técnica:</strong> transformar este protótipo demonstrativo em projeto React, criar o banco remoto, configurar autenticação e segurança, conectar API e validar publicação. O preview atual não está conectado a esses serviços externos.
+              </div>
+            </section>
+
+            <div class="footer-note">
+              <span>TRACE-REP LITE · Projeto Integrador</span>
+              <span>Protótipo interativo · Dados fictícios</span>
+            </div>
+          </div>
+        </main>
       </div>
-    </main>
-  </div>
-</div>
-<div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal"><div class="modal-header"><div><h2 id="modalTitle">Novo registro</h2><p id="modalSubtitle">Preencha os campos abaixo.</p></div><button class="close-btn" id="closeModal" aria-label="Fechar janela">×</button></div><div class="modal-body" id="modalBody"></div></div></div>
-<div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
-<script>
-(function(){
-const $ = (s, root=document) => root.querySelector(s);
-const $$ = (s, root=document) => [...root.querySelectorAll(s)];
-const now = new Date();
-const stamp = (offset=0) => { const d=new Date(now.getTime()-offset*60000); return d.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); };
-const isoDate = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
-let repeaters = [
- {id:'REP-001',name:'Torre A · Centro',location:'São Paulo, SP',status:'ok',temp:42.6,voltage:12.2,signal:78,updated:'há 8 s',last:stamp(8),lat:-23.5505,lng:-46.6333},
- {id:'REP-002',name:'Torre B · Norte',location:'Guarulhos, SP',status:'warn',temp:62.4,voltage:11.9,signal:41,updated:'há 12 s',last:stamp(12),lat:-23.4543,lng:-46.5337},
- {id:'REP-003',name:'Laboratório',location:'Campus · Bloco 3',status:'ok',temp:35.8,voltage:12.4,signal:92,updated:'há 5 s',last:stamp(5),lat:-23.5614,lng:-46.7302},
- {id:'REP-004',name:'Torre C · Sul',location:'Santo André, SP',status:'bad',temp:null,voltage:null,signal:0,updated:'há 18 min',last:stamp(18),lat:-23.6639,lng:-46.5383},
- {id:'REP-005',name:'Torre D · Oeste',location:'Osasco, SP',status:'ok',temp:39.1,voltage:12.1,signal:84,updated:'há 16 s',last:stamp(16),lat:-23.5325,lng:-46.7917}
-];
-let alerts = [
- {id:1,title:'Temperatura acima do limite',description:'Leitura de 62,4 °C · limite de demonstração: 60 °C',device:'REP-002',severity:'critical',time:stamp(3),ack:false},
- {id:2,title:'Equipamento sem comunicação',description:'Sem leitura recebida há mais de 15 minutos',device:'REP-004',severity:'critical',time:stamp(18),ack:false},
- {id:3,title:'Tensão abaixo do ideal',description:'Última leitura válida: 11,9 V',device:'REP-002',severity:'warning',time:stamp(24),ack:true},
- {id:4,title:'Inspeção registrada',description:'Manutenção preventiva concluída',device:'REP-003',severity:'info',time:stamp(91),ack:true}
-];
-let maintenances = [
- {id:'MAN-0104',device:'REP-003',type:'Preventiva',tech:'Marina Costa',date:isoDate(),note:'Inspeção visual do gabinete e conferência dos conectores.'},
- {id:'MAN-0103',device:'REP-001',type:'Inspeção',tech:'Lucas Almeida',date:isoDate(),note:'Verificação de temperatura e alimentação.'},
- {id:'MAN-0102',device:'REP-002',type:'Corretiva',tech:'Rafael Souza',date:isoDate(),note:'Verificar elevação de temperatura no próximo ciclo.'}
-];
-let activeView='dashboard';
-const viewNames={dashboard:'Visão geral',repeaters:'Repetidoras',alerts:'Central de alertas',maintenance:'Manutenções',reports:'Relatórios',requirements:'Stack & requisitos'};
-const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const stLabel = s => ({ok:'Normal',warn:'Atenção',bad:'Offline'}[s]||s);
-const stClass = s => ({ok:'status-ok',warn:'status-warn',bad:'status-bad'}[s]||'status-neutral');
-const sevLabel = s=>({critical:'Crítico',warning:'Atenção',info:'Informativo'}[s]||s);
-const sevClass = s=>({critical:'status-bad',warning:'status-warn',info:'status-neutral'}[s]||'status-neutral');
-const online = () => repeaters.filter(r=>r.status!=='bad').length;
-const healthy = () => repeaters.filter(r=>r.status==='ok').length;
-const activeAlerts = () => alerts.filter(a=>!a.ack).length;
-function showToast(msg,kind='ok'){const el=document.createElement('div');el.className='toast'+(kind==='error'?' error':'');el.textContent=msg;$('#toastRegion').appendChild(el);setTimeout(()=>el.remove(),3600);}
-function go(view){activeView=view;$$('.view').forEach(e=>e.classList.toggle('active',e.id==='view-'+view));$$('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));$('#crumbTitle').textContent=viewNames[view]||'TRACE-REP';renderAll();window.scrollTo({top:0,behavior:'smooth'});}
-function repeaterStatusBadge(r){return `<span class="status ${stClass(r.status)}">${stLabel(r.status)}</span>`;}
-function renderStats(){const stats=[
- {label:'Repetidoras cadastradas',value:repeaters.length,foot:'Equipamentos no inventário',icon:'▤',tone:'blue'},
- {label:'Funcionamento normal',value:healthy(),foot:`${repeaters.length?Math.round(healthy()/repeaters.length*100):0}% do inventário`,icon:'✓',tone:'green'},
- {label:'Precisam de atenção',value:repeaters.filter(r=>r.status==='warn').length,foot:'Verifique temperatura e tensão',icon:'!',tone:'amber'},
- {label:'Sem comunicação',value:repeaters.filter(r=>r.status==='bad').length,foot:'Último contato expirado',icon:'⌁',tone:'red'}];
- $('#statsGrid').innerHTML=stats.map(s=>`<article class="card stat-card"><div class="stat-top"><div class="stat-label">${s.label}</div><div class="stat-icon tone-${s.tone}">${s.icon}</div></div><div class="stat-value">${s.value}</div><div class="stat-foot">${s.foot}</div></article>`).join('');
- $('#navAlertCount').textContent=activeAlerts();$('#navAlertCount').style.display=activeAlerts()?'':'none';
-}
-function renderChart(){let n=Number($('#chartRange')?.value||12);let labs=n===6?['−5h','−4h','−3h','−2h','−1h','Agora']:n===24?['−24h','−20h','−16h','−12h','−8h','−4h','Agora']:['−12h','−10h','−8h','−6h','−4h','−2h','Agora'];let temp=n===6?[38,40,43,46,52,45]:n===24?[34,39,36,42,44,51,45]:[36,39,38,43,48,62,45];let sig=n===6?[89,87,83,80,65,82]:n===24?[94,91,93,86,81,70,84]:[90,91,88,86,77,41,84];
- const svg=$('#telemetryChart');const W=620,H=235,L=42,R=12,T=13,B=32,plotW=W-L-R,plotH=H-T-B;
- const x=i=>L+(i/(labs.length-1))*plotW;const yT=v=>T+(70-v)/70*plotH;const yS=v=>T+(100-v)/100*plotH;
- const lines=[0,20,40,60].map(v=>{let y=yT(v);return `<line x1="${L}" y1="${y}" x2="${W-R}" y2="${y}" stroke="var(--border)" stroke-dasharray="3 4"/><text x="${L-9}" y="${y+3}" fill="var(--muted)" font-size="9" text-anchor="end">${v}°</text>`}).join('');
- const points=(arr,fn)=>arr.map((v,i)=>`${x(i)},${fn(v)}`).join(' ');
- const labels=labs.map((l,i)=>`<text x="${x(i)}" y="${H-10}" fill="var(--muted)" font-size="9" text-anchor="middle">${l}</text>`).join('');
- const tempPts=points(temp,yT),sigPts=points(sig,yS);
- const circles=(arr,fn,color)=>arr.map((v,i)=>`<circle cx="${x(i)}" cy="${fn(v)}" r="3" fill="${color}" stroke="var(--surface)" stroke-width="1.5"/>`).join('');
- svg.innerHTML=`${lines}<polyline points="${tempPts}" fill="none" stroke="#5b78ee" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><polyline points="${sigPts}" fill="none" stroke="#25b889" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${circles(temp,yT,'#5b78ee')}${circles(sig,yS,'#25b889')}${labels}`;
-}
-function renderHealth(){const total=repeaters.length||1;const h=[{name:'Equipamentos comunicando',desc:'Conectividade recebida',value:`${online()} de ${repeaters.length}`,pct:online()/total*100,color:'var(--green)',tone:'green'}, {name:'Temperatura sob controle',desc:'Abaixo do limite demonstrativo',value:`${repeaters.filter(r=>r.status==='ok').length} equipamentos`,pct:healthy()/total*100,color:'var(--green)',tone:'green'}, {name:'Alertas não reconhecidos',desc:'Ocorrências aguardando revisão',value:String(activeAlerts()),pct:Math.min(100,activeAlerts()/Math.max(1,alerts.length)*100),color:activeAlerts()?'var(--amber)':'var(--green)',tone:activeAlerts()?'amber':'green'}];
- $('#healthSummary').innerHTML=h.map(a=>`<div class="health-row"><div class="health-symbol tone-${a.tone}">◉</div><div class="health-info"><div class="health-name">${a.name}</div><div class="health-desc">${a.desc}</div><div class="health-bar"><span style="width:${Math.max(3,a.pct)}%;background:${a.color}"></span></div></div><div class="health-value">${a.value}</div></div>`).join('');
- $('#reportHealth').innerHTML=h.map(a=>`<div class="health-row"><div class="health-symbol tone-${a.tone}">◉</div><div class="health-info"><div class="health-name">${a.name}</div><div class="health-desc">${a.desc}</div><div class="health-bar"><span style="width:${Math.max(3,a.pct)}%;background:${a.color}"></span></div></div><div class="health-value">${a.value}</div></div>`).join('');
-}
-function renderDashboardTable(){const rows=repeaters.slice(0,4);$('#dashboardRepeaters').innerHTML=rows.map(r=>`<tr><td><div class="device-cell"><div class="device-symbol">▤</div><div><div class="device-id">${esc(r.id)}</div><div class="device-location">${esc(r.name)}</div></div></div></td><td>${repeaterStatusBadge(r)}</td><td>${r.temp===null?'—':r.temp.toFixed(1)+' °C'}</td><td>${r.voltage===null?'—':r.voltage.toFixed(1)+' V'}</td><td style="color:var(--muted)">${esc(r.updated)}</td></tr>`).join('');}
-function renderRecentAlerts(){const items=alerts.slice().sort((a,b)=>a.ack-b.ack).slice(0,4);$('#recentAlerts').innerHTML=items.length?items.map(a=>`<div class="alert-item"><div class="alert-symbol ${a.severity==='critical'?'tone-red':a.severity==='warning'?'tone-amber':'tone-blue'}">${a.severity==='critical'?'!':a.severity==='warning'?'⚠':'i'}</div><div class="alert-copy"><div class="alert-title">${esc(a.title)}</div><div class="alert-detail">${esc(a.device)} · ${esc(a.description)}</div></div><div class="alert-time">${esc(a.time)}</div></div>`).join(''):'<div class="empty-state">Nenhum evento registrado.</div>';}
-function renderRepeaters(){const q=($('#repeaterSearch')?.value||'').trim().toLowerCase();const f=$('#statusFilter')?.value||'all';const list=repeaters.filter(r=>(f==='all'||r.status===f)&&`${r.id} ${r.name} ${r.location}`.toLowerCase().includes(q));$('#allRepeaters').innerHTML=list.map(r=>`<tr><td><div class="device-cell"><div class="device-symbol">▤</div><div><div class="device-id">${esc(r.id)}</div><div class="device-location">${esc(r.name)}</div></div></div></td><td>${esc(r.location)}</td><td>${repeaterStatusBadge(r)}</td><td>${r.temp===null?'—':r.temp.toFixed(1)+' °C'}</td><td>${r.voltage===null?'—':r.voltage.toFixed(1)+' V'}</td><td><div style="display:flex;align-items:center;gap:8px"><div class="health-bar" style="width:58px;margin:0"><span style="width:${r.signal}%;background:${r.signal<50?'var(--amber)':'var(--green)'}"></span></div><span>${r.signal}%</span></div></td><td><button class="action-link" data-detail="${esc(r.id)}">Detalhes</button> · <button class="action-link" data-maint-device="${esc(r.id)}">Manutenção</button></td></tr>`).join('');$('#repeaterEmpty').style.display=list.length?'none':'block';}
-function renderAlerts(){const f=$('#alertFilter')?.value||'all';const sv=$('#alertSeverity')?.value||'all';const list=alerts.filter(a=>(f==='all'||(f==='active'?!a.ack:a.ack))&&(sv==='all'||a.severity===sv)).sort((a,b)=>a.ack-b.ack);$('#alertsTable').innerHTML=list.map(a=>`<tr><td><div class="device-id">${esc(a.title)}</div><div class="device-location">${esc(a.description)}</div></td><td><span class="device-id">${esc(a.device)}</span></td><td><span class="status ${sevClass(a.severity)}">${sevLabel(a.severity)}</span></td><td>${esc(a.time)}</td><td><span class="status ${a.ack?'status-neutral':'status-warn'}">${a.ack?'Reconhecido':'Pendente'}</span></td><td>${a.ack?'<span style="color:var(--muted);font-size:10px">Concluído</span>':`<button class="action-link" data-ack="${a.id}">Reconhecer</button>`}</td></tr>`).join('');$('#alertsEmpty').style.display=list.length?'none':'block';$('#navAlertCount').textContent=activeAlerts();$('#navAlertCount').style.display=activeAlerts()?'':'none';}
-function renderMaintenance(){const q=($('#maintenanceSearch')?.value||'').toLowerCase();const list=maintenances.filter(m=>`${m.id} ${m.device} ${m.tech} ${m.type} ${m.note}`.toLowerCase().includes(q));$('#maintenanceTable').innerHTML=list.map(m=>`<tr><td><span class="device-id">${esc(m.id)}</span></td><td>${esc(m.device)}</td><td><span class="status status-neutral">${esc(m.type)}</span></td><td>${esc(m.tech)}</td><td>${esc(m.date)}</td><td style="white-space:normal;min-width:170px;max-width:260px;color:var(--muted);line-height:1.5">${esc(m.note)}</td></tr>`).join('');$('#maintenanceEmpty').style.display=list.length?'none':'block';$('#maintenanceStats').innerHTML=[{label:'Serviços registrados',value:maintenances.length,tone:'blue',icon:'⌁',foot:'Nesta demonstração'},{label:'Preventivas',value:maintenances.filter(m=>m.type==='Preventiva').length,tone:'green',icon:'✓',foot:'Manutenção planejada'},{label:'Corretivas',value:maintenances.filter(m=>m.type==='Corretiva').length,tone:'amber',icon:'⚒',foot:'Atuação sobre falha'},{label:'Equipamentos atendidos',value:new Set(maintenances.map(m=>m.device)).size,tone:'blue',icon:'▤',foot:'IDs distintos'}].map(s=>`<article class="card stat-card"><div class="stat-top"><div class="stat-label">${s.label}</div><div class="stat-icon tone-${s.tone}">${s.icon}</div></div><div class="stat-value">${s.value}</div><div class="stat-foot">${s.foot}</div></article>`).join('');}
-function renderReports(){let count={critical:alerts.filter(a=>a.severity==='critical').length,warning:alerts.filter(a=>a.severity==='warning').length,info:alerts.filter(a=>a.severity==='info').length};$('#reportStats').innerHTML=[{label:'Disponibilidade ilustrativa',value:`${repeaters.length?Math.round(online()/repeaters.length*100):0}%`,note:'Equipamentos comunicando'},{label:'Alertas pendentes',value:activeAlerts(),note:'Exigem revisão'},{label:'Manutenções registradas',value:maintenances.length,note:'Histórico de demonstração'}].map((s,i)=>`<article class="card report-metric"><div class="stat-label">${s.label}</div><div class="report-value">${s.value}</div><div class="report-label">${s.note}</div></article>`).join('');let max=Math.max(1,count.critical,count.warning,count.info);$('#alertBars').innerHTML=[['Crítico',count.critical],['Atenção',count.warning],['Informativo',count.info]].map(([l,v])=>`<div class="bar-col"><div class="bar-val">${v}</div><div class="bar" style="height:${Math.max(5,v/max*130)}px;background:${l==='Crítico'?'linear-gradient(180deg,#ef8f96,#dc5962)':l==='Atenção'?'linear-gradient(180deg,#efc26c,#cb861a)':'linear-gradient(180deg,#8ca0ff,#5b78ee)'}"></div><div class="bar-label">${l}</div></div>`).join('');}
-function renderAll(){renderStats();renderChart();renderHealth();renderDashboardTable();renderRecentAlerts();renderRepeaters();renderAlerts();renderMaintenance();renderReports();}
-function openModal(title,subtitle,bodyHtml,onSubmit){$('#modalTitle').textContent=title;$('#modalSubtitle').textContent=subtitle;$('#modalBody').innerHTML=bodyHtml;$('#modalBackdrop').classList.add('open');$('#modalBackdrop').dataset.open='1';const form=$('#modalForm');if(form)form.addEventListener('submit',e=>{e.preventDefault();onSubmit(new FormData(form));});setTimeout(()=>$('#modalBody input, #modalBody select, #modalBody textarea')?.focus(),20);}
-function closeModal(){$('#modalBackdrop').classList.remove('open');$('#modalBackdrop').dataset.open='';}
-function repeaterModal(){openModal('Cadastrar repetidora','Adicione um equipamento ao inventário de demonstração.',`<form id="modalForm"><div class="form-grid" style="margin-top:0"><div class="field"><label for="rId">Identificador *</label><input id="rId" name="id" placeholder="REP-006" required maxlength="18"></div><div class="field"><label for="rName">Nome do equipamento *</label><input id="rName" name="name" placeholder="Torre E · Leste" required></div><div class="field full"><label for="rLocation">Localização *</label><input id="rLocation" name="location" placeholder="Cidade, UF ou local do campus" required></div><div class="field"><label for="rTemp">Temperatura inicial (°C)</label><input id="rTemp" name="temp" type="number" min="-20" max="150" step="0.1" value="36"></div><div class="field"><label for="rVoltage">Tensão inicial (V)</label><input id="rVoltage" name="voltage" type="number" min="0" max="60" step="0.1" value="12.1"></div></div><div class="form-actions"><button type="button" class="btn" data-close-modal>Cancelar</button><button type="submit" class="btn btn-primary">Cadastrar equipamento</button></div></form>`,fd=>{let id=String(fd.get('id')).trim().toUpperCase();if(repeaters.some(r=>r.id.toLowerCase()===id.toLowerCase())){showToast('Esse identificador já existe. Use outro ID.','error');return;}let temp=Number(fd.get('temp')),voltage=Number(fd.get('voltage'));repeaters.unshift({id,name:String(fd.get('name')).trim(),location:String(fd.get('location')).trim(),status:temp>60||voltage<11?'warn':'ok',temp,voltage,signal:76,updated:'agora',last:stamp(0)});closeModal();renderAll();showToast(`${id} cadastrada no protótipo.`);});}
-function maintenanceModal(device=''){openModal('Registrar manutenção','Registre uma intervenção vinculada à repetidora.',`<form id="modalForm"><div class="form-grid" style="margin-top:0"><div class="field"><label for="mDevice">Repetidora *</label><select id="mDevice" name="device" required>${repeaters.map(r=>`<option value="${esc(r.id)}" ${r.id===device?'selected':''}>${esc(r.id)} · ${esc(r.name)}</option>`).join('')}</select></div><div class="field"><label for="mType">Tipo de serviço *</label><select id="mType" name="type" required><option>Preventiva</option><option>Corretiva</option><option>Instalação</option><option>Inspeção</option></select></div><div class="field"><label for="mTech">Nome do técnico *</label><input id="mTech" name="tech" placeholder="Nome completo" required></div><div class="field"><label for="mDate">Data *</label><input id="mDate" name="date" type="date" value="${isoDate()}" required></div><div class="field full"><label for="mNote">Descrição do serviço *</label><textarea id="mNote" name="note" placeholder="Descreva o que foi verificado, corrigido ou substituído…" required></textarea></div></div><div class="form-actions"><button type="button" class="btn" data-close-modal>Cancelar</button><button type="submit" class="btn btn-primary">Salvar registro</button></div></form>`,fd=>{let serial=104+maintenances.length;maintenances.unshift({id:'MAN-'+String(serial).padStart(4,'0'),device:String(fd.get('device')),type:String(fd.get('type')),tech:String(fd.get('tech')).trim(),date:String(fd.get('date')),note:String(fd.get('note')).trim()});closeModal();renderAll();showToast('Manutenção registrada nesta sessão de demonstração.');});}
-function detailModal(id){const r=repeaters.find(x=>x.id===id);if(!r)return;openModal(`${r.id} · Detalhes`,'Informações do equipamento de demonstração.',`<div class="grid" style="gap:12px;grid-template-columns:repeat(2,minmax(0,1fr))"><div class="callout"><div class="stat-label">Estado atual</div><div style="margin-top:9px">${repeaterStatusBadge(r)}</div></div><div class="callout"><div class="stat-label">Sinal simulado</div><div class="report-value" style="font-size:23px;margin:8px 0 0">${r.signal}%</div></div><div class="callout"><div class="stat-label">Temperatura</div><div class="report-value" style="font-size:23px;margin:8px 0 0">${r.temp===null?'—':r.temp.toFixed(1)+'°'}</div></div><div class="callout"><div class="stat-label">Tensão</div><div class="report-value" style="font-size:23px;margin:8px 0 0">${r.voltage===null?'—':r.voltage.toFixed(1)+' V'}</div></div></div><div class="metric-list"><div class="metric-row"><span>Nome</span><strong>${esc(r.name)}</strong></div><div class="metric-row"><span>Localização</span><strong>${esc(r.location)}</strong></div><div class="metric-row"><span>Última atualização</span><strong>${esc(r.updated)}</strong></div><div class="metric-row"><span>Coordenadas ilustrativas</span><strong>${r.lat.toFixed(4)}, ${r.lng.toFixed(4)}</strong></div></div><div class="notice">Leituras e coordenadas são dados demonstrativos, não medições reais.</div><div class="form-actions"><button class="btn" data-close-modal>Fechar</button><button class="btn btn-primary" id="detailMaintenance" data-device="${esc(id)}">Registrar manutenção</button></div>`,()=>{});}
-function simulateFault(){const candidates=repeaters.filter(r=>r.status==='ok');const r=candidates.length?candidates[0]:repeaters[0];if(!r){showToast('Cadastre uma repetidora antes de simular falhas.','error');return;}const type=Math.floor(Math.random()*3);let item;if(type===0){r.status='warn';r.temp=+(63+Math.random()*4).toFixed(1);r.signal=Math.max(20,r.signal-35);r.updated='agora';item={title:'Temperatura crítica simulada',description:`Leitura de ${r.temp} °C acima do limite demonstrativo`,device:r.id,severity:'critical',time:stamp(0),ack:false};}else if(type===1){r.status='bad';r.temp=null;r.voltage=null;r.signal=0;r.updated='sem comunicação';item={title:'Perda de comunicação simulada',description:'Equipamento colocado offline manualmente',device:r.id,severity:'critical',time:stamp(0),ack:false};}else{r.status='warn';r.voltage=10.4;r.signal=Math.max(15,r.signal-25);r.updated='agora';item={title:'Tensão baixa simulada',description:'Leitura de 10,4 V abaixo do limite de demonstração',device:r.id,severity:'warning',time:stamp(0),ack:false};}alerts.unshift({id:Math.max(0,...alerts.map(a=>a.id))+1,...item});renderAll();showToast(`Falha simulada em ${r.id}. Um novo alerta foi criado.`);}
-function exportCSV(filename,rows){const csv=rows.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);showToast('Arquivo CSV gerado com os dados atuais.');}
-function exportRepeaters(){exportCSV('trace-rep-repetidoras.csv',[['ID','Nome','Localização','Status','Temperatura °C','Tensão V','Sinal simulado %','Última atualização'],...repeaters.map(r=>[r.id,r.name,r.location,stLabel(r.status),r.temp,r.voltage,r.signal,r.updated])]);}
-function exportMaintenances(){exportCSV('trace-rep-manutencoes.csv',[['Protocolo','Repetidora','Tipo','Técnico','Data','Observação'],...maintenances.map(m=>[m.id,m.device,m.type,m.tech,m.date,m.note])]);}
-function exportReport(){exportCSV('trace-rep-relatorio.csv',[['Tipo','Identificador','Status/Tipo','Data','Descrição'],...repeaters.map(r=>['Repetidora',r.id,stLabel(r.status),r.updated,`${r.name}; temp ${r.temp}; tensao ${r.voltage}; sinal ${r.signal}%`]),...alerts.map(a=>['Alerta',a.device,sevLabel(a.severity),a.time,`${a.title} · ${a.description} · ${a.ack?'Reconhecido':'Pendente'}`]),...maintenances.map(m=>['Manutenção',m.device,m.type,m.date,`${m.id} · ${m.tech} · ${m.note}`])]);}
-// Main navigation and delegated controls.
-document.addEventListener('click',e=>{
- const nav=e.target.closest('[data-view]');if(nav){go(nav.dataset.view);$('#mobileNav').style.display='none';return;}
- const goto=e.target.closest('[data-goto]');if(goto){go(goto.dataset.goto);return;}
- const detail=e.target.closest('[data-detail]');if(detail){detailModal(detail.dataset.detail);return;}
- const mdev=e.target.closest('[data-maint-device]');if(mdev){maintenanceModal(mdev.dataset.maintDevice);return;}
- const ack=e.target.closest('[data-ack]');if(ack){const a=alerts.find(a=>a.id===Number(ack.dataset.ack));if(a){a.ack=true;renderAll();showToast('Alerta marcado como reconhecido.');}return;}
- if(e.target.closest('[data-close-modal]')){closeModal();return;}
- if(e.target.id==='detailMaintenance'){const id=e.target.dataset.device;closeModal();maintenanceModal(id);return;}
-});
-$('#newRepeater').addEventListener('click',repeaterModal);$('#newMaintenance').addEventListener('click',()=>maintenanceModal());$('#simulateFault').addEventListener('click',simulateFault);$('#alertSimulate').addEventListener('click',simulateFault);$('#repeatersExport').addEventListener('click',exportRepeaters);$('#dashboardExport').addEventListener('click',exportReport);$('#reportExport').addEventListener('click',exportReport);$('#maintenanceExport').addEventListener('click',exportMaintenances);$('#chartRange').addEventListener('change',renderChart);$('#repeaterSearch').addEventListener('input',renderRepeaters);$('#statusFilter').addEventListener('change',renderRepeaters);$('#alertFilter').addEventListener('change',renderAlerts);$('#alertSeverity').addEventListener('change',renderAlerts);$('#maintenanceSearch').addEventListener('input',renderMaintenance);$('#ackAll').addEventListener('click',()=>{let n=activeAlerts();alerts.forEach(a=>a.ack=true);renderAll();showToast(n?`${n} alerta(s) reconhecido(s).`:'Não havia alertas pendentes.');});$('#topAlerts').addEventListener('click',()=>go('alerts'));$('#closeModal').addEventListener('click',closeModal);$('#modalBackdrop').addEventListener('click',e=>{if(e.target===$('#modalBackdrop'))closeModal();});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
-$('#mobileToggle').addEventListener('click',()=>{const m=$('#mobileNav');m.style.display=m.style.display==='none'?'flex':'none';});
-$('#mobileNav').innerHTML=$$('#sideNav [data-view]').map(b=>`<button class="nav-btn${b.dataset.view==='dashboard'?' active':''}" data-view="${b.dataset.view}">${b.innerHTML}</button>`).join('');
-renderAll();
-})();
-</script>
-</body>
+    </div>
+
+    <!-- Esse pedaço parece não ter função alguma em qualquer página. 
+    Ao meu ver, seria uma tela de criação de registro [do que eu não sei] -->
+    <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal">
+        <div class="modal-header">
+          <div>
+            <h2 id="modalTitle">Novo registro</h2>
+            <p id="modalSubtitle">Preencha os campos abaixo.</p>
+          </div>
+          <button class="close-btn" id="closeModal" aria-label="Fechar janela">×</button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+      </div>
+    </div>
+    <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+
+
+    <!-- JS -->
+    <script src="client.js"></script>
+  </body>
 </html>
