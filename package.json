@@ -12,9 +12,14 @@
     "node": ">=18"
   },
   "dependencies": {
-    "better-sqlite3": "^11.10.0",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2"
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.3"
+  },
+  "allowScripts": {
+    "express@4.22.3": true,
+    "cors@2.8.6": true,
+    "dotenv@16.6.1": true,
+    "better-sqlite3@11.10.0": true
   }
 }

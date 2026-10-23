@@ -1,0 +1,18 @@
+# PlatformIO
+.pio/
+
+# Ambientes Locais / Credenciais
+.env
+.env.*
+
+# VS Code (Configurações locais de editor)
+.vscode/
+
+# Node / Frontend
+node_modules/
+package-lock.json
+
+# Arquivos temporários do sistema
+.DS_Store
+Thumbs.db
+

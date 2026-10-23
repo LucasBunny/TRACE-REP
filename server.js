@@ -5,26 +5,29 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const Database = require('better-sqlite3');
+
+// USANDO O SQLITE NATIVO DO NODE.JS (Disponível a partir do Node 22+)
+const { DatabaseSync } = require('node:sqlite');
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
 const dataDir = path.join(__dirname, 'data');
 fs.mkdirSync(dataDir, { recursive: true });
-const db = new Database(path.join(dataDir, 'trace-rep-lite.sqlite'));
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+
+// Inicializa o banco SQLite nativo
+const db = new DatabaseSync(path.join(dataDir, 'trace-rep-lite.sqlite'));
+db.exec('PRAGMA journal_mode = WAL;');
+db.exec('PRAGMA foreign_keys = ON;');
 
 app.use(express.json({ limit: '1mb' }));
 const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5500,http://127.0.0.1:5500,http://localhost:3000')
   .split(',').map(value => value.trim()).filter(Boolean);
 app.use(cors({ origin(origin, callback) {
-  // Permite ferramentas locais sem Origin (por exemplo, curl/Postman).
   if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
   return callback(new Error('Origem não autorizada pelo CORS.'));
 } }));
 
-// Banco local e dados iniciais inspirados no protótipo original.
+// Criação das tabelas
 db.exec(`
   CREATE TABLE IF NOT EXISTS repeaters (
     id TEXT PRIMARY KEY,
@@ -63,6 +66,7 @@ db.exec(`
 `);
 
 const count = table => db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get().n;
+
 if (count('repeaters') === 0) {
   const insert = db.prepare(`INSERT INTO repeaters (id,name,location,status,temp,voltage,signal,updated,lat,lng)
     VALUES (@id,@name,@location,@status,@temp,@voltage,@signal,@updated,@lat,@lng)`);
@@ -73,9 +77,16 @@ if (count('repeaters') === 0) {
     {id:'REP-004',name:'Torre C · Sul',location:'Santo André, SP',status:'bad',temp:null,voltage:null,signal:0,updated:'há 18 min',lat:-23.6639,lng:-46.5383},
     {id:'REP-005',name:'Torre D · Oeste',location:'Osasco, SP',status:'ok',temp:39.1,voltage:12.1,signal:84,updated:'há 16 s',lat:-23.5325,lng:-46.7917}
   ];
-  const tx = db.transaction(rows => rows.forEach(row => insert.run(row)));
-  tx(seed);
+  db.exec('BEGIN TRANSACTION;');
+  try {
+    for (const row of seed) insert.run(row);
+    db.exec('COMMIT;');
+  } catch (err) {
+    db.exec('ROLLBACK;');
+    throw err;
+  }
 }
+
 if (count('alerts') === 0) {
   const insert = db.prepare('INSERT INTO alerts (title,description,device,severity,time,ack) VALUES (@title,@description,@device,@severity,@time,@ack)');
   const seed = [
@@ -84,9 +95,16 @@ if (count('alerts') === 0) {
     {title:'Tensão abaixo do ideal',description:'Última leitura válida: 11,9 V',device:'REP-002',severity:'warning',time:'demonstração',ack:1},
     {title:'Inspeção registrada',description:'Manutenção preventiva concluída',device:'REP-003',severity:'info',time:'demonstração',ack:1}
   ];
-  const tx = db.transaction(rows => rows.forEach(row => insert.run(row)));
-  tx(seed);
+  db.exec('BEGIN TRANSACTION;');
+  try {
+    for (const row of seed) insert.run(row);
+    db.exec('COMMIT;');
+  } catch (err) {
+    db.exec('ROLLBACK;');
+    throw err;
+  }
 }
+
 if (count('maintenances') === 0) {
   const insert = db.prepare('INSERT INTO maintenances (id,device,type,tech,date,note) VALUES (@id,@device,@type,@tech,@date,@note)');
   const today = new Date().toISOString().slice(0,10);
@@ -95,11 +113,16 @@ if (count('maintenances') === 0) {
     {id:'MAN-0103',device:'REP-001',type:'Inspeção',tech:'Lucas Almeida',date:today,note:'Verificação de temperatura e alimentação.'},
     {id:'MAN-0102',device:'REP-002',type:'Corretiva',tech:'Rafael Souza',date:today,note:'Verificar elevação de temperatura no próximo ciclo.'}
   ];
-  const tx = db.transaction(rows => rows.forEach(row => insert.run(row)));
-  tx(seed);
+  db.exec('BEGIN TRANSACTION;');
+  try {
+    for (const row of seed) insert.run(row);
+    db.exec('COMMIT;');
+  } catch (err) {
+    db.exec('ROLLBACK;');
+    throw err;
+  }
 }
 
-const asyncRoute = handler => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 const validStatus = value => ['ok','warn','bad'].includes(value);
 const validSeverity = value => ['critical','warning','info'].includes(value);
 const validMaintenanceType = value => ['Preventiva','Corretiva','Instalação','Inspeção'].includes(value);
@@ -123,7 +146,7 @@ const normalizeRepeater = body => {
   return { id, name, location, status, temp, voltage, signal, updated: String(body.updated || 'agora'), lat: nullableNumber(body.lat), lng: nullableNumber(body.lng) };
 };
 
-app.get('/api/health', (_req, res) => res.json({status:'ok', service:'TRACE-REP LITE API', database:'SQLite', timestamp:new Date().toISOString()}));
+app.get('/api/health', (_req, res) => res.json({status:'ok', service:'TRACE-REP LITE API', database:'SQLite (Native)', timestamp:new Date().toISOString()}));
 
 app.get('/api/repeaters', (req, res) => {
   const params = [];
@@ -135,17 +158,20 @@ app.get('/api/repeaters', (req, res) => {
   sql += ' ORDER BY id';
   res.json(db.prepare(sql).all(...params));
 });
+
 app.get('/api/repeaters/:id', (req, res) => {
   const item = db.prepare('SELECT * FROM repeaters WHERE id = ?').get(req.params.id.toUpperCase());
   if (!item) return res.status(404).json({error:'Repetidora não encontrada.'});
   res.json(item);
 });
+
 app.post('/api/repeaters', (req, res) => {
   const item = normalizeRepeater(req.body);
   db.prepare(`INSERT INTO repeaters (id,name,location,status,temp,voltage,signal,updated,lat,lng)
     VALUES (@id,@name,@location,@status,@temp,@voltage,@signal,@updated,@lat,@lng)`).run(item);
   res.status(201).json(db.prepare('SELECT * FROM repeaters WHERE id=?').get(item.id));
 });
+
 app.put('/api/repeaters/:id', (req, res) => {
   const current = db.prepare('SELECT * FROM repeaters WHERE id=?').get(req.params.id.toUpperCase());
   if (!current) return res.status(404).json({error:'Repetidora não encontrada.'});
@@ -153,6 +179,7 @@ app.put('/api/repeaters/:id', (req, res) => {
   db.prepare(`UPDATE repeaters SET name=@name,location=@location,status=@status,temp=@temp,voltage=@voltage,signal=@signal,updated=@updated,lat=@lat,lng=@lng WHERE id=@id`).run(item);
   res.json(db.prepare('SELECT * FROM repeaters WHERE id=?').get(item.id));
 });
+
 app.delete('/api/repeaters/:id', (req, res) => {
   const result = db.prepare('DELETE FROM repeaters WHERE id=?').run(req.params.id.toUpperCase());
   if (!result.changes) return res.status(404).json({error:'Repetidora não encontrada.'});
@@ -171,6 +198,7 @@ app.get('/api/alerts', (req, res) => {
   sql += ' ORDER BY id DESC';
   res.json(db.prepare(sql).all(...args).map(row => ({...row, ack:Boolean(row.ack)})));
 });
+
 app.post('/api/alerts', (req, res) => {
   const title = requiredText(req.body.title, 'title');
   const description = String(req.body.description || '');
@@ -180,13 +208,16 @@ app.post('/api/alerts', (req, res) => {
   if (!db.prepare('SELECT 1 FROM repeaters WHERE id=?').get(device)) return res.status(400).json({error:'A repetidora informada não existe.'});
   const time = String(req.body.time || new Date().toISOString());
   const result = db.prepare('INSERT INTO alerts (title,description,device,severity,time,ack) VALUES (?,?,?,?,?,0)').run(title,description,device,severity,time);
-  res.status(201).json({...db.prepare('SELECT * FROM alerts WHERE id=?').get(result.lastInsertRowid),ack:false});
+  res.status(201).json({...db.prepare('SELECT * FROM alerts WHERE id=?').get(Number(result.lastInsertRowid)),ack:false});
 });
+
 app.patch('/api/alerts/:id/acknowledge', (req, res) => {
-  const result = db.prepare('UPDATE alerts SET ack=1 WHERE id=?').run(Number(req.params.id));
+  const alertId = Number(req.params.id);
+  const result = db.prepare('UPDATE alerts SET ack=1 WHERE id=?').run(alertId);
   if (!result.changes) return res.status(404).json({error:'Alerta não encontrado.'});
-  res.json({...db.prepare('SELECT * FROM alerts WHERE id=?').get(Number(req.params.id)),ack:true});
+  res.json({...db.prepare('SELECT * FROM alerts WHERE id=?').get(alertId),ack:true});
 });
+
 app.post('/api/alerts/acknowledge-all', (_req, res) => {
   const result = db.prepare('UPDATE alerts SET ack=1 WHERE ack=0').run();
   res.json({updated:result.changes});
@@ -197,6 +228,7 @@ app.get('/api/maintenances', (req, res) => {
     .all(...(req.query.device ? [String(req.query.device).toUpperCase()] : []));
   res.json(rows);
 });
+
 app.post('/api/maintenances', (req, res) => {
   const device = requiredText(req.body.device, 'device').toUpperCase();
   const type = requiredText(req.body.type, 'type');
@@ -224,7 +256,9 @@ app.get('/api/dashboard/summary', (_req, res) => {
 
 app.use((req, res) => res.status(404).json({error:'Rota não encontrada.',path:req.path}));
 app.use((err, _req, res, _next) => {
-  if (err.code === 'SQLITE_CONSTRAINT_PRIMARYKEY' || err.code === 'SQLITE_CONSTRAINT_UNIQUE') return res.status(409).json({error:'Já existe um registro com esse identificador.'});
+  if (err.message && (err.message.includes('UNIQUE constraint failed') || err.message.includes('PRIMARY KEY constraint failed'))) {
+    return res.status(409).json({error:'Já existe um registro com esse identificador.'});
+  }
   if (err.status) return res.status(err.status).json({error:err.message});
   if (err.message && err.message.includes('CORS')) return res.status(403).json({error:err.message});
   console.error(err);
@@ -235,6 +269,7 @@ const server = app.listen(PORT, () => {
   console.log(`TRACE-REP LITE API disponível em http://localhost:${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/api/health`);
 });
+
 function shutdown() {
   server.close(() => { db.close(); process.exit(0); });
 }
