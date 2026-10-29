@@ -58,25 +58,33 @@ function showToast(msg,kind='ok'){
 
 
 
-function FetchRepeaters(){
-    /* Faz uma requisição ao servidor e recebe uma lista de repetidoras, se existirem. */
-    /* 
-    
-    */
-    // Possíveis endereços
-    const accept_urls = ["http://localhost:5500", "http://127.0.0.1:5500", "http://localhost:3000"];
-    
-    /* Fazer um bloco try catch para escolher o endereço ativo do server. */
-    
-    // Endereço das repetidoras no server.
-    const server_url = '/repeaters';
+const API_URL = 'http://localhost:3000/api';
 
-    // 
-    const response = fetch(server_url);
+async function loadDataFromApi(){
+    try {
+        const responses = await Promise.all([
+            fetch(`${API_URL}/repeaters`),
+            fetch(`${API_URL}/alerts`),
+            fetch(`${API_URL}/maintenances`)
+        ]);
 
-    //
-    const repeaters = response.json();
-    return repeaters;    
+        if (responses.some(response => !response.ok)) {
+            throw new Error('Não foi possível carregar os dados da API.');
+        }
+
+        const [apiRepeaters, apiAlerts, apiMaintenances] =
+            await Promise.all(responses.map(response => response.json()));
+
+        repeaters = apiRepeaters;
+        alerts = apiAlerts;
+        maintenances = apiMaintenances;
+
+        renderAll();
+        showToast('Dados carregados da API.');
+    } catch (error) {
+        console.error(error);
+        showToast('Não foi possível conectar à API. Exibindo dados locais.', 'error');
+    }
 }
 
 
@@ -379,16 +387,38 @@ function repeaterModal(){
                 <button type="button" class="btn" data-close-modal>Cancelar</button>
                 <button type="submit" class="btn btn-primary">Cadastrar equipamento</button>
             </div>
-        </form>`,fd=>{let id=String(fd.get('id')).trim().toUpperCase();
+</form>`,async fd=>{
+            let id=String(fd.get('id')).trim().toUpperCase();
             if(repeaters.some(r=>r.id.toLowerCase()===id.toLowerCase())){
                 showToast('Esse identificador já existe. Use outro ID.','error');
-                return;}
+                return;
+            }
             let temp=Number(fd.get('temp')), voltage=Number(fd.get('voltage'));
-            repeaters.unshift({id,name:String(fd.get('name')).trim(),location:String(fd.get('location')).trim(),status:temp>60||voltage<11?'warn':'ok',temp,voltage,signal:76,updated:'agora',last:stamp(0)});
-            closeModal();
-            renderAll();
-            showToast(`${id} cadastrada no protótipo.`);});
-}
+            const repeater = {
+                id,
+                name:String(fd.get('name')).trim(),
+                location:String(fd.get('location')).trim(),
+                status:temp>60||voltage<11?'warn':'ok',
+                temp,
+                voltage,
+                signal:76,
+                updated:'agora'
+            };
+            try {
+                const response = await fetch(`${API_URL}/repeaters`, {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify(repeater)
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Não foi possível cadastrar a repetidora.');
+                await loadDataFromApi();
+                closeModal();
+                showToast(`${result.id} cadastrada e salva no banco.`);
+            } catch (error) {
+                console.error(error);
+                showToast(error.message || 'Não foi possível cadastrar a repetidora.','error');
+            }});}
 
 function maintenanceModal(device=''){
     openModal('Registrar manutenção','Registre uma intervenção vinculada à repetidora.',`
@@ -630,4 +660,61 @@ $$('#sideNav [data-view]').map(b=>
     `<button class = "nav-btn${b.dataset.view==='dashboard'?' active':''}" 
     data-view = "${b.dataset.view}">${b.innerHTML}</button>`).join('');
 renderAll();
+async function requestApi(path, options={}){
+    const response = await fetch(API_URL + path, options);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Não foi possível concluir a operação.');
+    return data;
+}
+
+document.addEventListener('submit', async event=>{
+    const form = event.target;
+    if (form.id !== 'modalForm' || !form.querySelector('#mDevice')) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const fd = new FormData(form);
+    try {
+        const maintenance = await requestApi('/maintenances', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:String(fd.get('device')),type:String(fd.get('type')),tech:String(fd.get('tech')).trim(),date:String(fd.get('date')),note:String(fd.get('note')).trim()})});
+        await loadDataFromApi();
+        closeModal();
+        showToast(maintenance.id + ' salva no banco.');
+    } catch (error) {
+        console.error(error);
+        showToast(error.message || 'Não foi possível registrar a manutenção.','error');
+    }
+}, true);
+
+document.addEventListener('click', async event=>{
+    const ackButton = event.target.closest('[data-ack]');
+    const acknowledgeAll = event.target.closest('#ackAll');
+    const simulationButton = event.target.closest('#simulateFault, #alertSimulate');
+    if (!ackButton && !acknowledgeAll && !simulationButton) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    try {
+        if (ackButton) {
+            await requestApi('/alerts/' + ackButton.dataset.ack + '/acknowledge', {method:'PATCH'});
+            await loadDataFromApi();
+            showToast('Alerta marcado como reconhecido.');
+            return;
+        }
+        if (acknowledgeAll) {
+            const result = await requestApi('/alerts/acknowledge-all', {method:'POST'});
+            await loadDataFromApi();
+            showToast(result.updated ? result.updated + ' alerta(s) reconhecido(s).' : 'Não havia alertas pendentes.');
+            return;
+        }
+        const repeater = repeaters.find(item=>item.status !== 'bad') || repeaters[0];
+        if (!repeater) throw new Error('Cadastre uma repetidora antes de simular falhas.');
+        const variants = [{title:'Temperatura crítica simulada',description:'Alerta criado para demonstração.',severity:'critical'},{title:'Perda de comunicação simulada',description:'Alerta criado para demonstração.',severity:'critical'},{title:'Tensão baixa simulada',description:'Alerta criado para demonstração.',severity:'warning'}];
+        const alert = variants[Math.floor(Math.random()*variants.length)];
+        await requestApi('/alerts', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...alert,device:repeater.id})});
+        await loadDataFromApi();
+        showToast('Alerta de teste criado para ' + repeater.id + '.');
+    } catch (error) {
+        console.error(error);
+        showToast(error.message || 'Não foi possível concluir a operação.','error');
+    }
+}, true);
+loadDataFromApi();
 })();
