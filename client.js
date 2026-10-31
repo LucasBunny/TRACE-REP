@@ -35,7 +35,16 @@ let maintenances = [
     {id:'MAN-0102',device:'REP-002',type:'Corretiva',tech:'Rafael Souza',date:isoDate(),note:'Verificar elevação de temperatura no próximo ciclo.'}
 ];
 let activeView='dashboard';
+const VIEW_STORAGE_KEY = 'trace-rep-active-view';
+let activeDetailId = null;
 
+// Recupera a última aba ativa salva no sessionStorage ou define 'dashboard' como padrão
+let savedView = 'dashboard';
+try {
+    savedView = sessionStorage.getItem(VIEW_STORAGE_KEY) || 'dashboard';
+} catch (error) {
+    console.warn('Não foi possível recuperar a página anterior.', error);
+}
 /* Dinamizar viewnames tbm */
 const viewNames={dashboard:'Visão geral',repeaters:'Repetidoras',alerts:'Central de alertas',maintenance:'Manutenções',reports:'Relatórios',requirements:'Stack & requisitos'};
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -55,12 +64,9 @@ function showToast(msg,kind='ok'){
 }
 
 
-
-
-
 const API_URL = 'http://localhost:3000/api';
 
-async function loadDataFromApi(){
+async function loadDataFromApi(silent = false) {
     try {
         const responses = await Promise.all([
             fetch(`${API_URL}/repeaters`),
@@ -80,19 +86,29 @@ async function loadDataFromApi(){
         maintenances = apiMaintenances;
 
         renderAll();
-        showToast('Dados carregados da API.');
+        if (activeDetailId && $('#modalBackdrop').dataset.open === '1') {
+        detailModal(activeDetailId);
+        }
+        if (!silent) {
+            showToast('Dados carregados da API.');
+        }
     } catch (error) {
         console.error(error);
-        showToast('Não foi possível conectar à API. Exibindo dados locais.', 'error');
+
+        if (!silent) {
+            showToast('Não foi possível conectar à API. Exibindo dados locais.', 'error');
+        }
     }
 }
 
 
-
-
-
 function go(view){
     activeView=view;
+    try {
+    sessionStorage.setItem(VIEW_STORAGE_KEY, view);
+    } catch (error) {
+    console.warn('Não foi possível salvar a página atual.', error);
+    }
     $$('.view').forEach(e=>e.classList.toggle('active',e.id==='view-'+view));
     $$('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
     $('#crumbTitle').textContent=viewNames[view]||'TRACE-REP';
@@ -356,6 +372,7 @@ function openModal(title,subtitle,bodyHtml,onSubmit){
 function closeModal(){
     $('#modalBackdrop').classList.remove('open');
     $('#modalBackdrop').dataset.open='';
+    activeDetailId = null;
 }
 
 function repeaterModal(){
@@ -382,6 +399,15 @@ function repeaterModal(){
                     <label for="rVoltage">Tensão inicial (V)</label>
                     <input id="rVoltage" name="voltage" type="number" min="0" max="60" step="0.1" value="12.1">
                 </div>
+                <div class="field">
+                    <label for="rLat">Latitude</label>
+                    <input id="rLat" name="lat" type="number" step="any" placeholder="-23.5505">
+                </div>
+
+                <div class="field">
+                    <label for="rLng">Longitude</label>
+                    <input id="rLng" name="lng" type="number" step="any" placeholder="-46.6333">
+                </div>
             </div>
             <div class="form-actions">
                 <button type="button" class="btn" data-close-modal>Cancelar</button>
@@ -402,7 +428,9 @@ function repeaterModal(){
                 temp,
                 voltage,
                 signal:76,
-                updated:'agora'
+                updated:'agora',
+                lat:fd.get('lat') === '' ? null : Number(fd.get('lat')),
+                lng:fd.get('lng') === '' ? null : Number(fd.get('lng'))
             };
             try {
                 const response = await fetch(`${API_URL}/repeaters`, {
@@ -471,6 +499,7 @@ function maintenanceModal(device=''){
 }
 
 function detailModal(id){
+    activeDetailId = id;
     const r=repeaters.find(x=>x.id===id);
     if(!r)return;
     openModal(`${r.id} · Detalhes`,'Informações do equipamento de demonstração.',`
@@ -503,7 +532,7 @@ function detailModal(id){
                 <span>Última atualização</span><strong>${esc(r.updated)}</strong>
             </div>
             <div class="metric-row">
-                <span>Coordenadas ilustrativas</span><strong>${r.lat.toFixed(4)}, ${r.lng.toFixed(4)}</strong>
+                <span>Coordenadas ilustrativas</span><strong>${r.lat != null && r.lng != null ? `${r.lat.toFixed(4)}, ${r.lng.toFixed(4)}` : 'Não cadastradas'}</strong>
             </div>
         </div>
         <div class="notice">Leituras e coordenadas são dados demonstrativos, não medições reais.</div>
@@ -659,7 +688,8 @@ $('#mobileNav').innerHTML =
 $$('#sideNav [data-view]').map(b=>
     `<button class = "nav-btn${b.dataset.view==='dashboard'?' active':''}" 
     data-view = "${b.dataset.view}">${b.innerHTML}</button>`).join('');
-renderAll();
+go(savedView);
+
 async function requestApi(path, options={}){
     const response = await fetch(API_URL + path, options);
     const data = await response.json();
@@ -667,20 +697,63 @@ async function requestApi(path, options={}){
     return data;
 }
 
-document.addEventListener('submit', async event=>{
+document.addEventListener('submit', async event => {
     const form = event.target;
-    if (form.id !== 'modalForm' || !form.querySelector('#mDevice')) return;
+    if (form.id !== 'modalForm') return;
+    
+    // Impede o recarregamento padrão da página
     event.preventDefault();
     event.stopImmediatePropagation();
+    
     const fd = new FormData(form);
     try {
-        const maintenance = await requestApi('/maintenances', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:String(fd.get('device')),type:String(fd.get('type')),tech:String(fd.get('tech')).trim(),date:String(fd.get('date')),note:String(fd.get('note')).trim()})});
-        await loadDataFromApi();
-        closeModal();
-        showToast(maintenance.id + ' salva no banco.');
+        // Verifica se é o formulário de manutenção
+        if (form.querySelector('#mDevice')) {
+            const maintenance = await requestApi('/maintenances', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    device: String(fd.get('device')),
+                    type: String(fd.get('type')),
+                    tech: String(fd.get('tech')).trim(),
+                    date: String(fd.get('date')),
+                    note: String(fd.get('note')).trim()
+                })
+            });
+            await loadDataFromApi();
+            closeModal();
+            showToast(maintenance.id + ' salva no banco.');
+        } 
+        // Se for o formulário de cadastro de repetidoras
+        else if (form.querySelector('#rId')) {
+            let id = String(fd.get('id')).trim().toUpperCase();
+            let temp = Number(fd.get('temp')), voltage = Number(fd.get('voltage'));
+            const repeater = {
+                id,
+                name: String(fd.get('name')).trim(),
+                location: String(fd.get('location')).trim(),
+                status: temp > 60 || voltage < 11 ? 'warn' : 'ok',
+                temp,
+                voltage,
+                signal: 76,
+                updated: 'agora'
+            };
+            
+            const response = await fetch(`${API_URL}/repeaters`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(repeater)
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Não foi possível cadastrar a repetidora.');
+            
+            await loadDataFromApi();
+            closeModal();
+            showToast(`${result.id} cadastrada e salva no banco.`);
+        }
     } catch (error) {
         console.error(error);
-        showToast(error.message || 'Não foi possível registrar a manutenção.','error');
+        showToast(error.message || 'Não foi possível concluir a operação.', 'error');
     }
 }, true);
 
@@ -717,4 +790,7 @@ document.addEventListener('click', async event=>{
     }
 }, true);
 loadDataFromApi();
+setInterval(() => {
+    loadDataFromApi(true);
+}, 5000);
 })();

@@ -254,6 +254,23 @@ app.get('/api/dashboard/summary', (_req, res) => {
   res.json({repeaters:{total,normal,attention,offline,communicating:total-offline},alerts:{total:count('alerts'),active:alertsActive},maintenances:{total:maintenanceCount},illustrativeAvailability:total ? Math.round((total-offline)/total*100) : 0});
 });
 
+// Servir a interface web pelo próprio Express
+app.get('/', (_req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/index.html', (_req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/client.js', (_req, res) => {
+    res.sendFile(path.join(__dirname, 'client.js'));
+});
+
+app.get('/styles.css', (_req, res) => {
+    res.sendFile(path.join(__dirname, 'styles.css'));
+});
+
 app.use((req, res) => res.status(404).json({error:'Rota não encontrada.',path:req.path}));
 app.use((err, _req, res, _next) => {
   if (err.message && (err.message.includes('UNIQUE constraint failed') || err.message.includes('PRIMARY KEY constraint failed'))) {

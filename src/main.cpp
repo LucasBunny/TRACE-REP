@@ -7,11 +7,11 @@ const char* ssid = "Wokwi-GUEST";
 const char* password = "";
 
 // URL local direta através da ponte do VS Code
-const char* serverUrl = "http://host.wokwi.internal:3000/api/repeaters/REP-001";
+const char* serverUrl = "http://host.wokwi.internal:3000/api/repeaters/REP-007";
 
 void setup() {
   Serial.begin(115200);
-  
+  randomSeed(micros());
   WiFi.begin(ssid, password);
   Serial.print("A ligar ao Wi-Fi");
   while (WiFi.status() != WL_CONNECTED) {
@@ -29,13 +29,13 @@ void loop() {
     http.addHeader("Content-Type", "application/json");
 
     StaticJsonDocument<200> doc;
-    doc["id"] = "REP-001";
-    doc["name"] = "Torre A · Centro";
-    doc["location"] = "São Paulo, SP";
+    doc["id"] = "REP-007";
+    doc["name"] = "Torre Z - Norte";
+    doc["location"] = "Lab";
     doc["status"] = "ok";
-    doc["temp"] = 43.5;
-    doc["voltage"] = 12.1;
-    doc["signal"] = 85;
+    doc["temp"] = random(400, 461) / 10.0;
+    doc["voltage"] = random(120, 125) / 10.0;
+    doc["signal"] = random(75, 96);
     doc["updated"] = "agora";
 
     String jsonString;
@@ -58,5 +58,5 @@ void loop() {
     Serial.println("Wi-Fi desconectado!");
   }
 
-  delay(10000);
+  delay(5000);
 }
