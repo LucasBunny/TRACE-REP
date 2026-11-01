@@ -64,7 +64,7 @@ function showToast(msg,kind='ok'){
 }
 
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = '/api';
 
 async function loadDataFromApi(silent = false) {
     try {
