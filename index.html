@@ -51,7 +51,7 @@
                 <span class="pulse-dot"></span>
                 Ambiente de demonstração
               </div>
-              <div class="connection-note">Dados fictícios para validar o fluxo de uso. Serviços externos ainda não conectados.</div>
+              <div class="connection-note">API e banco de dados conectados. Telemetria real das repetidoras ainda não integrada.</div>
             </div>
             <div class="user-mini">
               <div class="avatar">PI</div>
@@ -326,7 +326,7 @@
                 <div class="table-heading">
                   <div>
                     <div class="card-title">Histórico de serviços</div>
-                    <div class="card-subtitle">Registros armazenados nesta sessão de demonstração</div>
+                    <div class="card-subtitle">Histórico de manutenções armazenado no banco de dados</div>
                   </div>
                   <div class="search-box" style="max-width:240px">
                     <span class="search-icon">⌕</span>
@@ -350,7 +350,7 @@
                 </div>
                 <div id="maintenanceEmpty" class="empty-state" style="display:none">Nenhuma manutenção encontrada.</div>
               </article>
-              <div class="notice">A versão de demonstração mantém os registros apenas durante a sessão. A persistência definitiva será ligada ao banco de dados na etapa de integração.</div>
+              <div class="notice">Os registros de manutenção são armazenados no banco de dados e permanecem disponíveis após atualizar a página.</div>
             </section>
 
             <!-- Página de Relatórios -->
@@ -404,58 +404,59 @@
                   <div class="tech-top">
                     <div class="tech-icon">⚛</div>
                     <div>
-                      <div class="tech-name">React + JavaScript</div>
-                      <div class="tech-type">Interface web · Planejado</div>
+                      <div class="tech-name">HTML + CSS + JavaScript</div>
+                      <div class="tech-type">Interface web · Implementado</div>
                     </div>
                   </div>
-                  <p>Construção das páginas, formulários, gráficos, navegação e componentes acessíveis do sistema.</p>
+                  <p>Interface web desenvolvida com HTML, CSS e JavaScript, incluindo navegação, formulários, tabelas e visualização de dados.</p>
                 </article>
                 <article class="card tech-card">
                   <div class="tech-top">
                     <div class="tech-icon">▦</div>
                     <div>
                       <div class="tech-name">Supabase + PostgreSQL</div>
-                      <div class="tech-type">Banco de dados e serviços · Planejado</div>
+                      <div class="tech-type">Banco de dados · Implementado</div>
                     </div>
                   </div>
-                  <p>Armazenamento de equipamentos, medições, alertas, usuários e histórico de manutenções.</p>
+                  <p>Banco de dados PostgreSQL hospedado no Supabase, integrado à API para armazenar repetidoras, alertas e registros de manutenção.</p>
                 </article>
                 <article class="card tech-card">
                   <div class="tech-top">
                     <div class="tech-icon">☁</div>
                     <div>
                       <div class="tech-name">Vercel + Supabase</div>
-                      <div class="tech-type">Nuvem · Planejado</div>
-                    </div></div><p>Hospedagem da interface e dos serviços de dados, com acesso remoto após configurar os ambientes.</p>
+                      <div class="tech-type">Hospedagem · Implementado</div>
+                    </div></div><p>Aplicação publicada na Vercel, com backend integrado ao banco de dados PostgreSQL hospedado no Supabase.</p>
                   </article>
                 <article class="card tech-card">
                   <div class="tech-top">
                     <div class="tech-icon">⌘</div>
-                    <div><div class="tech-name">API + MQTT</div>
-                    <div class="tech-type">Integração de dados · Planejado</div>
+                    <div>
+                      <div class="tech-name">API REST + MQTT</div>
+                      <div class="tech-type">Comunicação · API implementada / MQTT futuro</div>
+                    </div>
                   </div>
-                </div>
-                <p>API para consultar e gerenciar registros do sistema; MQTT para telemetria enviada pelo ESP32.</p>
-              </article>
+                  <p>API REST desenvolvida com Node.js e Express para consultar e cadastrar repetidoras, alertas e manutenções. A integração MQTT será realizada em uma etapa futura para receber telemetria.</p>
+                </article>
                 <article class="card tech-card">
                   <div class="tech-top">
                     <div class="tech-icon">⑂</div>
                     <div>
                       <div class="tech-name">Git + GitHub</div>
-                      <div class="tech-type">Controle de versão · Planejado</div>
+                      <div class="tech-type">Controle de versão · Implementado</div>
                     </div>
                   </div>
-                  <p>Histórico de alterações, branches, revisão de código e trabalho colaborativo entre integrantes.</p>
+                  <p>Código-fonte versionado com Git e hospedado no GitHub, com histórico de alterações e integração ao processo de publicação na Vercel.</p>
                 </article>
                 <article class="card tech-card">
                   <div class="tech-top">
                     <div class="tech-icon">✓</div>
                     <div>
                       <div class="tech-name">Vitest + Testing Library + axe</div>
-                      <div class="tech-type">Testes e acessibilidade · Planejado</div>
+                      <div class="tech-type">Testes · Planejado</div>
                     </div>
                   </div>
-                  <p>Testes unitários e de componentes, verificação de fluxos essenciais e análise automatizada de acessibilidade.</p>
+                  <p>Ferramentas previstas para testes automatizados, validação de componentes e verificação de acessibilidade da aplicação.</p>
                 </article>
               </div>
               <article class="card" style="padding:19px;margin-bottom:16px">
@@ -523,7 +524,7 @@
               </div>
             </article>
               <div class="notice">
-                <strong>Próxima fase técnica:</strong> transformar este protótipo demonstrativo em projeto React, criar o banco remoto, configurar autenticação e segurança, conectar API e validar publicação. O preview atual não está conectado a esses serviços externos.
+                <strong>Próxima fase técnica:</strong> integrar a telemetria das repetidoras por meio de MQTT, conectar os dispositivos ESP32 e implementar testes automatizados e validações de acessibilidade. Atualmente, o sistema utiliza dados cadastrados e simulados para demonstrar seu funcionamento.
               </div>
             </section>
 

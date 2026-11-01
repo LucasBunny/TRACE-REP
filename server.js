@@ -33,13 +33,16 @@ pool.on('error', (error) => {
 app.use(express.json({ limit: '1mb' }));
 
 // Configuração do CORS
-const allowedOrigins = (
-  process.env.CORS_ORIGIN ||
-  'http://localhost:5500,http://127.0.0.1:5500,http://localhost:3000'
-)
-  .split(',')
-  .map(value => value.trim())
-  .filter(Boolean);
+const allowedOrigins = [
+  'http://localhost:5500',
+  'http://127.0.0.1:5500',
+  'http://localhost:3000',
+  'https://trace-rep.vercel.app',
+  ...(process.env.CORS_ORIGIN || '')
+    .split(',')
+    .map(value => value.trim())
+    .filter(Boolean)
+];
 
 app.use(cors({
   origin(origin, callback) {
@@ -47,6 +50,7 @@ app.use(cors({
       return callback(null, true);
     }
 
+    console.warn(`Origem bloqueada pelo CORS: ${origin}`);
     return callback(new Error('Origem não autorizada pelo CORS.'));
   }
 }));

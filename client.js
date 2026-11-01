@@ -7,12 +7,10 @@ const stamp = (offset=0) => {
     return d.toLocaleString(
         'pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); 
 };
-const isoDate = () => { 
-    const d=new Date();
-    return `
-            + ${d.getFullYear()}
-            - ${String(d.getMonth()+1).padStart(2,'0')}
-            - ${String(d.getDate()).padStart(2,'0')}`; 
+
+const isoDate = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 };
 
 /* Mudar essas variáveis para ficarem dinâmicas, i.e acesso ao bd */
@@ -413,41 +411,10 @@ function repeaterModal(){
                 <button type="button" class="btn" data-close-modal>Cancelar</button>
                 <button type="submit" class="btn btn-primary">Cadastrar equipamento</button>
             </div>
-</form>`,async fd=>{
-            let id=String(fd.get('id')).trim().toUpperCase();
-            if(repeaters.some(r=>r.id.toLowerCase()===id.toLowerCase())){
-                showToast('Esse identificador já existe. Use outro ID.','error');
-                return;
-            }
-            let temp=Number(fd.get('temp')), voltage=Number(fd.get('voltage'));
-            const repeater = {
-                id,
-                name:String(fd.get('name')).trim(),
-                location:String(fd.get('location')).trim(),
-                status:temp>60||voltage<11?'warn':'ok',
-                temp,
-                voltage,
-                signal:76,
-                updated:'agora',
-                lat:fd.get('lat') === '' ? null : Number(fd.get('lat')),
-                lng:fd.get('lng') === '' ? null : Number(fd.get('lng'))
-            };
-            try {
-                const response = await fetch(`${API_URL}/repeaters`, {
-                    method:'POST',
-                    headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify(repeater)
-                });
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.error || 'Não foi possível cadastrar a repetidora.');
-                await loadDataFromApi();
-                closeModal();
-                showToast(`${result.id} cadastrada e salva no banco.`);
-            } catch (error) {
-                console.error(error);
-                showToast(error.message || 'Não foi possível cadastrar a repetidora.','error');
-            }});}
-
+</form>`,
+()=>{}
+    );
+}
 function maintenanceModal(device=''){
     openModal('Registrar manutenção','Registre uma intervenção vinculada à repetidora.',`
         <form id="modalForm">
@@ -484,18 +451,9 @@ function maintenanceModal(device=''){
                 <button type="button" class="btn" data-close-modal>Cancelar</button>
                 <button type="submit" class="btn btn-primary">Salvar registro</button>
             </div>
-        </form>`, fd=>{
-            let serial=104+maintenances.length;
-            maintenances.unshift({
-                id:'MAN-'+String(serial).padStart(4,'0'),
-                device:String(fd.get('device')),
-                type:String(fd.get('type')),
-                tech:String(fd.get('tech')).trim(),
-                date:String(fd.get('date')),
-                note:String(fd.get('note')).trim()});
-            closeModal();
-            renderAll();
-            showToast('Manutenção registrada nesta sessão de demonstração.');});
+         </form>`,
+        ()=>{}
+    );
 }
 
 function detailModal(id){
@@ -540,38 +498,6 @@ function detailModal(id){
             <button class="btn" data-close-modal>Fechar</button>
             <button class="btn btn-primary" id="detailMaintenance" data-device="${esc(id)}">Registrar manutenção</button>
         </div>`,()=>{});
-}
-
-function simulateFault(){
-    const candidates=repeaters.filter(r=>r.status==='ok');
-    const r=candidates.length?candidates[0]:repeaters[0];
-    if(!r){
-        showToast('Cadastre uma repetidora antes de simular falhas.','error');
-        return;}
-    const type=Math.floor(Math.random()*3);
-    let item;
-    if(type===0){
-        r.status='warn';
-        r.temp=+(63+Math.random()*4).toFixed(1);
-        r.signal=Math.max(20,r.signal-35);
-        r.updated='agora';
-        item={title:'Temperatura crítica simulada',description:`Leitura de ${r.temp} °C acima do limite demonstrativo`,device:r.id,severity:'critical',time:stamp(0),ack:false};}
-    else if(type===1){
-        r.status='bad';
-        r.temp=null;
-        r.voltage=null;
-        r.signal=0;
-        r.updated='sem comunicação';
-        item={title:'Perda de comunicação simulada',description:'Equipamento colocado offline manualmente',device:r.id,severity:'critical',time:stamp(0),ack:false};}
-    else{
-        r.status='warn';
-        r.voltage=10.4;
-        r.signal=Math.max(15,r.signal-25);
-        r.updated='agora';
-        item={title:'Tensão baixa simulada',description:'Leitura de 10,4 V abaixo do limite de demonstração',device:r.id,severity:'warning',time:stamp(0),ack:false};}
-    alerts.unshift({id:Math.max(0,...alerts.map(a=>a.id))+1,...item});
-    renderAll();
-    showToast(`Falha simulada em ${r.id}. Um novo alerta foi criado.`);
 }
 
 function exportCSV(filename,rows){
@@ -632,16 +558,7 @@ document.addEventListener('click',e=>{
         maintenanceModal(mdev.dataset.maintDevice);
         return;
     }
-    const ack = e.target.closest('[data-ack]');
-    if(ack){
-        const a=alerts.find(a=>a.id===Number(ack.dataset.ack));
-        if(a){
-            a.ack=true;
-            renderAll();
-            showToast('Alerta marcado como reconhecido.');
-        }
-        return;
-    }
+
     if(e.target.closest('[data-close-modal]')){
         closeModal();return;
     }
@@ -656,8 +573,6 @@ document.addEventListener('click',e=>{
 /* Event listeners */
 $('#newRepeater').addEventListener('click',repeaterModal);
 $('#newMaintenance').addEventListener('click',()=>maintenanceModal());
-$('#simulateFault').addEventListener('click',simulateFault);
-$('#alertSimulate').addEventListener('click',simulateFault);
 $('#repeatersExport').addEventListener('click',exportRepeaters);
 $('#dashboardExport').addEventListener('click',exportReport);
 $('#reportExport').addEventListener('click',exportReport);
@@ -668,13 +583,6 @@ $('#statusFilter').addEventListener('change',renderRepeaters);
 $('#alertFilter').addEventListener('change',renderAlerts);
 $('#alertSeverity').addEventListener('change',renderAlerts);
 $('#maintenanceSearch').addEventListener('input',renderMaintenance);
-
-$('#ackAll').addEventListener('click',
-    ()=>{let n=activeAlerts();
-    alerts.forEach(a=>a.ack=true);
-    renderAll();
-    showToast(n?`${n} alerta(s) reconhecido(s).`:'Não havia alertas pendentes.');
-});
 $('#topAlerts').addEventListener('click',()=>go('alerts'));
 $('#closeModal').addEventListener('click',closeModal);
 $('#modalBackdrop').addEventListener('click',e=>{if(e.target===$('#modalBackdrop'))closeModal();});
@@ -699,7 +607,7 @@ async function requestApi(path, options={}){
 
 document.addEventListener('submit', async event => {
     const form = event.target;
-    if (form.id !== 'modalForm') return;
+    if (form.getAttribute('id') !== 'modalForm') return;
     
     // Impede o recarregamento padrão da página
     event.preventDefault();
@@ -729,14 +637,16 @@ document.addEventListener('submit', async event => {
             let id = String(fd.get('id')).trim().toUpperCase();
             let temp = Number(fd.get('temp')), voltage = Number(fd.get('voltage'));
             const repeater = {
-                id,
-                name: String(fd.get('name')).trim(),
-                location: String(fd.get('location')).trim(),
-                status: temp > 60 || voltage < 11 ? 'warn' : 'ok',
-                temp,
-                voltage,
-                signal: 76,
-                updated: 'agora'
+            id,
+            name: String(fd.get('name')).trim(),
+            location: String(fd.get('location')).trim(),
+            status: temp > 60 || voltage < 11 ? 'warn' : 'ok',
+            temp,
+            voltage,
+            signal: 76,
+            updated: 'agora',
+            lat: fd.get('lat') === '' ? null : Number(fd.get('lat')),
+            lng: fd.get('lng') === '' ? null : Number(fd.get('lng'))
             };
             
             const response = await fetch(`${API_URL}/repeaters`, {
