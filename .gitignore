@@ -4,21 +4,23 @@
 # Ambientes locais / credenciais
 .env
 .env.*
+!.env.example
 
 # VS Code
 .vscode/
 
 # Node
 node_modules/
-package-lock.json
 
-# Arquivos temporários
+# SQLite local e temporários
+/data/*.sqlite
+/data/*.sqlite-shm
+/data/*.sqlite-wal
+
+
+# Sistema
 .DS_Store
 Thumbs.db
 
-# SQLite temporários
-data/*.sqlite-shm
-data/*.sqlite-wal
-
-# Backup do banco
-/data/trace-rep-backup.sqlite
+# Backups de código
+*.bak
