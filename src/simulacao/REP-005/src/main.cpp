@@ -7,7 +7,7 @@ const char* ssid = "Wokwi-GUEST";
 const char* password = "";
 
 // URL local direta através da ponte do VS Code
-const char* serverUrl = "http://host.wokwi.internal:3000/api/repeaters/REP-007";
+const char* serverUrl = "https://trace-rep.vercel.app/api/repeaters/REP-005";
 
 void setup() {
   Serial.begin(115200);
@@ -29,9 +29,9 @@ void loop() {
     http.addHeader("Content-Type", "application/json");
 
     StaticJsonDocument<200> doc;
-    doc["id"] = "REP-007";
-    doc["name"] = "Torre Z - Norte";
-    doc["location"] = "Lab";
+    doc["id"] = "REP-005";
+    doc["name"] = "Torre D - Oeste";
+    doc["location"] = "Osasco, SP";
     doc["status"] = "ok";
     doc["temp"] = random(400, 461) / 10.0;
     doc["voltage"] = random(120, 125) / 10.0;
@@ -42,6 +42,12 @@ void loop() {
     serializeJson(doc, jsonString);
 
     int httpResponseCode = http.PUT(jsonString);
+
+    Serial.println("URL utilizada:");
+    Serial.println(serverUrl);
+
+    Serial.println("JSON enviado:");
+    Serial.println(jsonString);
 
     if (httpResponseCode > 0) {
       String response = http.getString();
