@@ -136,10 +136,40 @@ function renderStats(){
 }
 
 function renderChart(){
-    let n=Number($('#chartRange')?.value||12);
-    let labs=n===6?['−5h','−4h','−3h','−2h','−1h','Agora']:n===24?['−24h','−20h','−16h','−12h','−8h','−4h','Agora']:['−12h','−10h','−8h','−6h','−4h','−2h','Agora'];
-    let temp=n===6?[38,40,43,46,52,45]:n===24?[34,39,36,42,44,51,45]:[36,39,38,43,48,62,45];
-    let sig=n===6?[89,87,83,80,65,82]:n===24?[94,91,93,86,81,70,84]:[90,91,88,86,77,41,84];
+    let n = Number($('#chartRange')?.value || 12);
+    
+    let labs, temp, sig;
+    
+    if (n === 5) {
+        labs = ['−4s', '−3s', '−2s', '−1s', 'Agora'];
+        temp = [42.0, 42.2, 42.5, 42.3, 42.6];
+        sig = [78, 79, 78, 80, 78];
+    } else if (n === 30) {
+        labs = ['−24s', '−18s', '−12s', '−6s', 'Agora'];
+        temp = [41.5, 41.8, 42.1, 42.4, 42.6];
+        sig = [75, 77, 76, 79, 78];
+    } else if (n === 60) {
+        labs = ['−60s', '−45s', '−30s', '−15s', 'Agora'];
+        temp = [40.5, 41.2, 41.8, 42.2, 42.6];
+        sig = [80, 78, 79, 77, 78];
+    } else if (n === 120) {
+        labs = ['−120s', '−90s', '−60s', '−30s', 'Agora'];
+        temp = [39.0, 40.1, 41.2, 42.0, 42.6];
+        sig = [82, 80, 79, 77, 78];
+    } else if (n === 6) {
+        labs = ['−5h','−4h','−3h','−2h','−1h','Agora'];
+        temp = [38,40,43,46,52,45];
+        sig = [89,87,83,80,65,82];
+    } else if (n === 24) {
+        labs = ['−24h','−20h','−16h','−12h','−8h','−4h','Agora'];
+        temp = [34,39,36,42,44,51,45];
+        sig = [94,91,93,86,81,70,84];
+    } else { // Padrão 12h
+        labs = ['−12h','−10h','−8h','−6h','−4h','−2h','Agora'];
+        temp = [36,39,38,43,48,62,45];
+        sig = [90,91,88,86,77,41,84];
+    }
+
     const svg=$('#telemetryChart');
     const W=620,H=235,L=42,R=12,T=13,B=32,plotW=W-L-R,plotH=H-T-B;
     const x=i=>L+(i/(labs.length-1))*plotW;
@@ -152,6 +182,7 @@ function renderChart(){
     const circles=(arr,fn,color)=>arr.map((v,i)=>`<circle cx="${x(i)}" cy="${fn(v)}" r="3" fill="${color}" stroke="var(--surface)" stroke-width="1.5"/>`).join('');
     svg.innerHTML=`${lines}<polyline points="${tempPts}" fill="none" stroke="#5b78ee" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><polyline points="${sigPts}" fill="none" stroke="#25b889" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${circles(temp,yT,'#5b78ee')}${circles(sig,yS,'#25b889')}${labels}`;
 }
+
 
 function renderHealth(){
     const total=repeaters.length||1;
