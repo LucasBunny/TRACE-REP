@@ -32,6 +32,10 @@ let maintenances = [
     {id:'MAN-0103',device:'REP-001',type:'Inspeção',tech:'Lucas Almeida',date:isoDate(),note:'Verificação de temperatura e alimentação.'},
     {id:'MAN-0102',device:'REP-002',type:'Corretiva',tech:'Rafael Souza',date:isoDate(),note:'Verificar elevação de temperatura no próximo ciclo.'}
 ];
+
+// Histórico de telemetria recebido da API
+let telemetryHistory = [];
+
 let activeView='dashboard';
 const VIEW_STORAGE_KEY = 'trace-rep-active-view';
 let activeDetailId = null;
@@ -69,8 +73,8 @@ async function loadDataFromApi(silent = false) {
         const responses = await Promise.all([
             fetch(`${API_URL}/repeaters`),
             fetch(`${API_URL}/alerts`),
-            fetch(`${API_URL}/maintenances`)
-        ]);
+            fetch(`${API_URL}/maintenances`),
+            ]);
 
         if (responses.some(response => !response.ok)) {
             throw new Error('Não foi possível carregar os dados da API.');
@@ -82,6 +86,7 @@ async function loadDataFromApi(silent = false) {
         repeaters = apiRepeaters;
         alerts = apiAlerts;
         maintenances = apiMaintenances;
+        await loadTelemetryHistory();
 
         renderAll();
         if (activeDetailId && $('#modalBackdrop').dataset.open === '1') {
@@ -135,52 +140,185 @@ function renderStats(){
     $('#navAlertCount').style.display=activeAlerts()?'':'none';
 }
 
-function renderChart(){
-    let n = Number($('#chartRange')?.value || 12);
-    
-    let labs, temp, sig;
-    
-    if (n === 5) {
-        labs = ['−4s', '−3s', '−2s', '−1s', 'Agora'];
-        temp = [42.0, 42.2, 42.5, 42.3, 42.6];
-        sig = [78, 79, 78, 80, 78];
-    } else if (n === 30) {
-        labs = ['−24s', '−18s', '−12s', '−6s', 'Agora'];
-        temp = [41.5, 41.8, 42.1, 42.4, 42.6];
-        sig = [75, 77, 76, 79, 78];
-    } else if (n === 60) {
-        labs = ['−60s', '−45s', '−30s', '−15s', 'Agora'];
-        temp = [40.5, 41.2, 41.8, 42.2, 42.6];
-        sig = [80, 78, 79, 77, 78];
-    } else if (n === 120) {
-        labs = ['−120s', '−90s', '−60s', '−30s', 'Agora'];
-        temp = [39.0, 40.1, 41.2, 42.0, 42.6];
-        sig = [82, 80, 79, 77, 78];
-    } else if (n === 6) {
-        labs = ['−5h','−4h','−3h','−2h','−1h','Agora'];
-        temp = [38,40,43,46,52,45];
-        sig = [89,87,83,80,65,82];
-    } else if (n === 24) {
-        labs = ['−24h','−20h','−16h','−12h','−8h','−4h','Agora'];
-        temp = [34,39,36,42,44,51,45];
-        sig = [94,91,93,86,81,70,84];
-    } else { // Padrão 12h
-        labs = ['−12h','−10h','−8h','−6h','−4h','−2h','Agora'];
-        temp = [36,39,38,43,48,62,45];
-        sig = [90,91,88,86,77,41,84];
+function chartRangeSeconds() {
+    return Number($('#chartRange')?.value || 43200);
+}
+
+async function loadTelemetryHistory() {
+    try {
+        const seconds = chartRangeSeconds();
+
+        const response = await fetch(
+            `${API_URL}/telemetry?seconds=${seconds}`
+        );
+
+        if (!response.ok) {
+            throw new Error('Não foi possível carregar o histórico de telemetria.');
+        }
+
+        telemetryHistory = await response.json();
+        console.log('Telemetria carregada:', telemetryHistory);
+
+    } catch (error) {
+        console.error('Erro ao carregar histórico de telemetria:', error);
+    }
+}
+
+function renderChart() {
+    const svg = $('#telemetryChart');
+    if (!svg) return;
+
+    const W = 620, H = 235;
+    const L = 42, R = 32, T = 13, B = 32;
+    const plotW = W - L - R;
+    const plotH = H - T - B;
+
+    const seconds = chartRangeSeconds();
+    const bucketSize = seconds <= 120 ? 15000 :
+                       seconds <= 21600 ? 300000 :
+                       seconds <= 43200 ? 600000 : 1200000;
+
+    const selectedRepeater = $('#chartRepeater')?.value || 'all';
+
+    const filteredHistory = selectedRepeater === 'all'
+        ? telemetryHistory
+        : telemetryHistory.filter(row =>
+            row.repeater_id === selectedRepeater
+        );
+
+    const buckets = new Map();
+
+    filteredHistory.forEach(row => {
+        const timestamp = new Date(row.recorded_at).getTime();
+
+        if (!Number.isFinite(timestamp)) return;
+
+        const key = Math.floor(timestamp / bucketSize);
+        if (!buckets.has(key)) {
+            buckets.set(key, {
+                timestamp: key * bucketSize,
+                temps: [],
+                signals: []
+            });
+        }
+
+        const bucket = buckets.get(key);
+
+        if (Number.isFinite(Number(row.temp))) {
+            bucket.temps.push(Number(row.temp));
+        }
+
+        if (Number.isFinite(Number(row.signal))) {
+            bucket.signals.push(Number(row.signal));
+        }
+    });
+
+    const data = [...buckets.values()]
+        .sort((a, b) => a.timestamp - b.timestamp)
+        .map(bucket => ({
+            timestamp: bucket.timestamp,
+            temp: bucket.temps.length
+                ? bucket.temps.reduce((a, b) => a + b, 0) / bucket.temps.length
+                : null,
+            signal: bucket.signals.length
+                ? bucket.signals.reduce((a, b) => a + b, 0) / bucket.signals.length
+                : null
+        }))
+        .filter(point => point.temp !== null || point.signal !== null);
+
+    if (!data.length) {
+        svg.innerHTML = `
+            <text x="${W / 2}" y="${H / 2}"
+                fill="var(--muted)"
+                font-size="12"
+                text-anchor="middle">
+                Aguardando dados de telemetria...
+            </text>`;
+        return;
     }
 
-    const svg=$('#telemetryChart');
-    const W=620,H=235,L=42,R=12,T=13,B=32,plotW=W-L-R,plotH=H-T-B;
-    const x=i=>L+(i/(labs.length-1))*plotW;
-    const yT=v=>T+(70-v)/70*plotH;
-    const yS=v=>T+(100-v)/100*plotH;
-    const lines=[0,20,40,60].map(v=>{let y=yT(v);return `<line x1="${L}" y1="${y}" x2="${W-R}" y2="${y}" stroke="var(--border)" stroke-dasharray="3 4"/><text x="${L-9}" y="${y+3}" fill="var(--muted)" font-size="9" text-anchor="end">${v}°</text>`}).join('');
-    const points=(arr,fn)=>arr.map((v,i)=>`${x(i)},${fn(v)}`).join(' ');
-    const labels=labs.map((l,i)=>`<text x="${x(i)}" y="${H-10}" fill="var(--muted)" font-size="9" text-anchor="middle">${l}</text>`).join('');
-    const tempPts=points(temp,yT),sigPts=points(sig,yS);
-    const circles=(arr,fn,color)=>arr.map((v,i)=>`<circle cx="${x(i)}" cy="${fn(v)}" r="3" fill="${color}" stroke="var(--surface)" stroke-width="1.5"/>`).join('');
-    svg.innerHTML=`${lines}<polyline points="${tempPts}" fill="none" stroke="#5b78ee" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><polyline points="${sigPts}" fill="none" stroke="#25b889" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${circles(temp,yT,'#5b78ee')}${circles(sig,yS,'#25b889')}${labels}`;
+    const x = i => data.length === 1
+        ? L + plotW / 2
+        : L + (i / (data.length - 1)) * plotW;
+
+    const yT = v => T + (70 - v) / 70 * plotH;
+    const yS = v => T + (100 - v) / 100 * plotH;
+
+    const lines = [0, 20, 40, 60].map(v => {
+    const y = yT(v);
+    const percent = Math.round((v / 70) * 100);
+
+    return `
+        <line x1="${L}" y1="${y}" x2="${W - R}" y2="${y}"
+            stroke="var(--border)" stroke-dasharray="3 4"/>
+
+        <text x="${L - 9}" y="${y + 3}"
+            fill="var(--muted)" font-size="9" text-anchor="end">
+            ${v}°
+        </text>
+
+        <text x="${W - R + 5}" y="${y + 3}"
+            fill="var(--muted)" font-size="9" text-anchor="start">
+            ${percent}%
+        </text>`;
+    }).join('');
+
+    const tempData = data
+        .map((point, i) => ({ x: x(i), y: point.temp === null ? null : yT(point.temp) }))
+        .filter(point => point.y !== null);
+
+    const signalData = data
+        .map((point, i) => ({ x: x(i), y: point.signal === null ? null : yS(point.signal) }))
+        .filter(point => point.y !== null);
+
+    const makeLine = (points, color) => {
+        if (!points.length) return '';
+
+        const polyline = points.map(p => `${p.x},${p.y}`).join(' ');
+
+        const circles = points.map(p => `
+            <circle cx="${p.x}" cy="${p.y}" r="3"
+                fill="${color}" stroke="var(--surface)" stroke-width="1.5"/>
+        `).join('');
+
+        return `
+            <polyline points="${polyline}" fill="none"
+                stroke="${color}" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round"/>
+            ${circles}`;
+    };
+
+    const labelIndexes = [...new Set([
+        0,
+        Math.floor((data.length - 1) / 2),
+        data.length - 1
+    ])];
+
+    const labels = labelIndexes.map(i => {
+        const date = new Date(data[i].timestamp);
+        const label = seconds <= 120
+            ? date.toLocaleTimeString('pt-BR', {
+                minute: '2-digit',
+                second: '2-digit'
+              })
+            : date.toLocaleTimeString('pt-BR', {
+                hour: '2-digit',
+                minute: '2-digit'
+              });
+
+        return `
+            <text x="${x(i)}" y="${H - 10}"
+                fill="var(--muted)" font-size="9" text-anchor="middle">
+                ${label}
+            </text>`;
+    }).join('');
+
+    svg.innerHTML = `
+        ${lines}
+        ${makeLine(tempData, '#5b78ee')}
+        ${makeLine(signalData, '#25b889')}
+        ${labels}
+    `;
 }
 
 
@@ -375,7 +513,28 @@ function renderReports(){
         </div>`).join('');
 }
 
+function renderChartRepeaterOptions() {
+    const select = $('#chartRepeater');
+    if (!select) return;
+
+    const currentValue = select.value;
+
+    select.innerHTML = `
+        <option value="all">Todas as repetidoras</option>
+        ${repeaters.map(repeater => `
+            <option value="${repeater.id}">
+                ${repeater.id}
+            </option>
+        `).join('')}
+    `;
+
+    if ([...select.options].some(option => option.value === currentValue)) {
+        select.value = currentValue;
+    }
+}
+
 function renderAll(){
+    renderChartRepeaterOptions();
     renderStats();
     renderChart();
     renderHealth();
@@ -608,7 +767,13 @@ $('#repeatersExport').addEventListener('click',exportRepeaters);
 $('#dashboardExport').addEventListener('click',exportReport);
 $('#reportExport').addEventListener('click',exportReport);
 $('#maintenanceExport').addEventListener('click',exportMaintenances);
-$('#chartRange').addEventListener('change',renderChart);
+$('#chartRange').addEventListener('change', async () => {
+    await loadTelemetryHistory();
+    renderChart();
+});
+$('#chartRepeater').addEventListener('change', () => {
+    renderChart();
+});
 $('#repeaterSearch').addEventListener('input',renderRepeaters);
 $('#statusFilter').addEventListener('change',renderRepeaters);
 $('#alertFilter').addEventListener('change',renderAlerts);

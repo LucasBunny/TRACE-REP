@@ -127,17 +127,31 @@
                   <div class="card-header">
                     <div>
                       <div class="card-title">Telemetria dos equipamentos</div>
-                      <div class="card-subtitle">Temperatura média e nível simulado de saída · últimas 12 horas</div>
+                      <div class="card-subtitle" id="chartSubtitle">
+                        Temperatura média e nível simulado de saída
+                      </div>
                     </div>
-                    <select class="select-small" id="chartRange" aria-label="Período do gráfico">
-                      <option value="5">Últimos 5s</option>
-                      <option value="30">Últimos 30s</option>
-                      <option value="60">Últimos 60s</option>
-                      <option value="120">Últimos 120s</option>
-                      <option value="12">Últimas 12h</option>
-                      <option value="6">Últimas 6h</option>
-                      <option value="24">Últimas 24h</option>
-                    </select>
+
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+
+                      <select class="select-small" id="chartRepeater"
+                              aria-label="Selecionar repetidora">
+                        <option value="all">Todas as repetidoras</option>
+                      </select>
+
+                      <select class="select-small" id="chartRange"
+                              aria-label="Período do gráfico">
+                        <option value="60">Último 1 minuto</option>
+                        <option value="300">Últimos 5 minutos</option>
+                        <option value="900">Últimos 15 minutos</option>
+                        <option value="1800">Últimos 30 minutos</option>
+                        <option value="3600">Última 1 hora</option>
+                        <option value="21600">Últimas 6 horas</option>
+                        <option value="43200" selected>Últimas 12 horas</option>
+                        <option value="86400">Últimas 24 horas</option>
+                      </select>
+
+                    </div>
                   </div>
                   <div class="chart-wrap">
                     <svg class="chart-svg" id="telemetryChart" viewBox="0 0 620 235" role="img" aria-label="Gráfico de telemetria de exemplo"></svg>

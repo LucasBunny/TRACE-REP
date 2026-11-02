@@ -229,55 +229,83 @@ app.post('/api/repeaters', asyncHandler(async (req, res) => {
 
 app.put('/api/repeaters/:id', asyncHandler(async (req, res) => {
   const id = req.params.id.toUpperCase();
+  const client = await pool.connect();
 
-  const currentResult = await pool.query(
-    'SELECT * FROM public.repeaters WHERE id = $1',
-    [id]
-  );
+  try {
+    await client.query('BEGIN');
 
-  if (currentResult.rowCount === 0) {
-    return res.status(404).json({
-      error: 'Repetidora não encontrada.'
+    const currentResult = await client.query(
+      'SELECT * FROM public.repeaters WHERE id = $1 FOR UPDATE',
+      [id]
+    );
+
+    if (currentResult.rowCount === 0) {
+      await client.query('ROLLBACK');
+
+      return res.status(404).json({
+        error: 'Repetidora não encontrada.'
+      });
+    }
+
+    const current = currentResult.rows[0];
+
+    const item = normalizeRepeater({
+      ...current,
+      ...req.body,
+      id: current.id
     });
+
+    const result = await client.query(`
+      UPDATE public.repeaters
+      SET
+        name = $1,
+        location = $2,
+        status = $3,
+        temp = $4,
+        voltage = $5,
+        signal = $6,
+        updated = $7,
+        lat = $8,
+        lng = $9
+      WHERE id = $10
+      RETURNING *
+    `, [
+      item.name,
+      item.location,
+      item.status,
+      item.temp,
+      item.voltage,
+      item.signal,
+      item.updated,
+      item.lat,
+      item.lng,
+      item.id
+    ]);
+
+    await client.query(`
+      INSERT INTO public.telemetry_history
+        (repeater_id, temp, voltage, signal)
+      VALUES ($1, $2, $3, $4)
+    `, [
+      item.id,
+      item.temp,
+      item.voltage,
+      item.signal
+    ]);
+
+    await client.query('COMMIT');
+
+    res.json(result.rows[0]);
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+
+  } finally {
+    client.release();
   }
-
-  const current = currentResult.rows[0];
-
-  const item = normalizeRepeater({
-    ...current,
-    ...req.body,
-    id: current.id
-  });
-
-  const result = await pool.query(`
-    UPDATE public.repeaters
-    SET
-      name = $1,
-      location = $2,
-      status = $3,
-      temp = $4,
-      voltage = $5,
-      signal = $6,
-      updated = $7,
-      lat = $8,
-      lng = $9
-    WHERE id = $10
-    RETURNING *
-  `, [
-    item.name,
-    item.location,
-    item.status,
-    item.temp,
-    item.voltage,
-    item.signal,
-    item.updated,
-    item.lat,
-    item.lng,
-    item.id
-  ]);
-
-  res.json(result.rows[0]);
 }));
+
 
 
 app.delete('/api/repeaters/:id', asyncHandler(async (req, res) => {
@@ -492,6 +520,40 @@ app.post('/api/maintenances', asyncHandler(async (req, res) => {
   res.status(201).json(result.rows[0]);
 }));
 
+
+// ==============================
+// HISTÓRICO DE TELEMETRIA
+// ==============================
+
+app.get('/api/telemetry', asyncHandler(async (req, res) => {
+  const seconds = Number(req.query.seconds || 43200);
+
+  if (
+    !Number.isInteger(seconds) ||
+    seconds < 1 ||
+    seconds > 86400
+  ) {
+    return res.status(400).json({
+      error: 'Período inválido. Informe entre 1 e 86400 segundos.'
+    });
+  }
+
+  const result = await pool.query(`
+    SELECT
+      id,
+      repeater_id,
+      temp,
+      voltage,
+      signal,
+      recorded_at
+    FROM public.telemetry_history
+    WHERE recorded_at >= NOW() - ($1 * INTERVAL '1 second')
+    ORDER BY recorded_at ASC
+    LIMIT 50000
+  `, [seconds]);
+
+  res.json(result.rows);
+}));
 
 // ==============================
 // RESUMO DO DASHBOARD
