@@ -1,133 +1,316 @@
-(function(){
-const $ = (s, root=document) => root.querySelector(s);
-const $$ = (s, root=document) => [...root.querySelectorAll(s)];
-const now = new Date();
-const stamp = (offset=0) => { 
-    const d=new Date(now.getTime() - offset*60000);
-    return d.toLocaleString(
-        'pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); 
-};
+(function () {
+  // --- PROTEÇÃO DE ROTA ---
+  if (!localStorage.getItem("traceRepToken")) {
+    window.location.href = "login.html";
+    return; // Para a execução do script
+  }
 
-const isoDate = () => {
+  const $ = (s, root = document) => root.querySelector(s);
+  const $$ = (s, root = document) => [...root.querySelectorAll(s)];
+  const now = new Date();
+  const stamp = (offset = 0) => {
+    const d = new Date(now.getTime() - offset * 60000);
+    return d.toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const isoDate = () => {
     const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-};
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
 
-/* Mudar essas variáveis para ficarem dinâmicas, i.e acesso ao bd */
-let repeaters = [
-    {id:'REP-001',name:'Torre A · Centro',location:'São Paulo, SP',status:'ok',temp:42.6,voltage:12.2,signal:78,updated:'há 8 s',last:stamp(8),lat:-23.5505,lng:-46.6333},
-    {id:'REP-002',name:'Torre B · Norte',location:'Guarulhos, SP',status:'warn',temp:62.4,voltage:11.9,signal:41,updated:'há 12 s',last:stamp(12),lat:-23.4543,lng:-46.5337},
-    {id:'REP-003',name:'Laboratório',location:'Campus · Bloco 3',status:'ok',temp:35.8,voltage:12.4,signal:92,updated:'há 5 s',last:stamp(5),lat:-23.5614,lng:-46.7302},
-    {id:'REP-004',name:'Torre C · Sul',location:'Santo André, SP',status:'bad',temp:null,voltage:null,signal:0,updated:'há 18 min',last:stamp(18),lat:-23.6639,lng:-46.5383},
-    {id:'REP-005',name:'Torre D · Oeste',location:'Osasco, SP',status:'ok',temp:39.1,voltage:12.1,signal:84,updated:'há 16 s',last:stamp(16),lat:-23.5325,lng:-46.7917}
-];
-let alerts = [
-    {id:1,title:'Temperatura acima do limite',description:'Leitura de 62,4 °C · limite de demonstração: 60 °C',device:'REP-002',severity:'critical',time:stamp(3),ack:false},
-    {id:2,title:'Equipamento sem comunicação',description:'Sem leitura recebida há mais de 15 minutos',device:'REP-004',severity:'critical',time:stamp(18),ack:false},
-    {id:3,title:'Tensão abaixo do ideal',description:'Última leitura válida: 11,9 V',device:'REP-002',severity:'warning',time:stamp(24),ack:true},
-    {id:4,title:'Inspeção registrada',description:'Manutenção preventiva concluída',device:'REP-003',severity:'info',time:stamp(91),ack:true}
-];
-let maintenances = [
-    {id:'MAN-0104',device:'REP-003',type:'Preventiva',tech:'Marina Costa',date:isoDate(),note:'Inspeção visual do gabinete e conferência dos conectores.'},
-    {id:'MAN-0103',device:'REP-001',type:'Inspeção',tech:'Lucas Almeida',date:isoDate(),note:'Verificação de temperatura e alimentação.'},
-    {id:'MAN-0102',device:'REP-002',type:'Corretiva',tech:'Rafael Souza',date:isoDate(),note:'Verificar elevação de temperatura no próximo ciclo.'}
-];
+  /* Mudar essas variáveis para ficarem dinâmicas, i.e acesso ao bd */
+  let repeaters = [
+    {
+      id: "REP-001",
+      name: "Torre A · Centro",
+      location: "São Paulo, SP",
+      status: "ok",
+      temp: 42.6,
+      voltage: 12.2,
+      signal: 78,
+      updated: "há 8 s",
+      last: stamp(8),
+      lat: -23.5505,
+      lng: -46.6333,
+    },
+    {
+      id: "REP-002",
+      name: "Torre B · Norte",
+      location: "Guarulhos, SP",
+      status: "warn",
+      temp: 62.4,
+      voltage: 11.9,
+      signal: 41,
+      updated: "há 12 s",
+      last: stamp(12),
+      lat: -23.4543,
+      lng: -46.5337,
+    },
+    {
+      id: "REP-003",
+      name: "Laboratório",
+      location: "Campus · Bloco 3",
+      status: "ok",
+      temp: 35.8,
+      voltage: 12.4,
+      signal: 92,
+      updated: "há 5 s",
+      last: stamp(5),
+      lat: -23.5614,
+      lng: -46.7302,
+    },
+    {
+      id: "REP-004",
+      name: "Torre C · Sul",
+      location: "Santo André, SP",
+      status: "bad",
+      temp: null,
+      voltage: null,
+      signal: 0,
+      updated: "há 18 min",
+      last: stamp(18),
+      lat: -23.6639,
+      lng: -46.5383,
+    },
+    {
+      id: "REP-005",
+      name: "Torre D · Oeste",
+      location: "Osasco, SP",
+      status: "ok",
+      temp: 39.1,
+      voltage: 12.1,
+      signal: 84,
+      updated: "há 16 s",
+      last: stamp(16),
+      lat: -23.5325,
+      lng: -46.7917,
+    },
+  ];
+  let alerts = [
+    {
+      id: 1,
+      title: "Temperatura acima do limite",
+      description: "Leitura de 62,4 °C · limite de demonstração: 60 °C",
+      device: "REP-002",
+      severity: "critical",
+      time: stamp(3),
+      ack: false,
+    },
+    {
+      id: 2,
+      title: "Equipamento sem comunicação",
+      description: "Sem leitura recebida há mais de 15 minutos",
+      device: "REP-004",
+      severity: "critical",
+      time: stamp(18),
+      ack: false,
+    },
+    {
+      id: 3,
+      title: "Tensão abaixo do ideal",
+      description: "Última leitura válida: 11,9 V",
+      device: "REP-002",
+      severity: "warning",
+      time: stamp(24),
+      ack: true,
+    },
+    {
+      id: 4,
+      title: "Inspeção registrada",
+      description: "Manutenção preventiva concluída",
+      device: "REP-003",
+      severity: "info",
+      time: stamp(91),
+      ack: true,
+    },
+  ];
+  let maintenances = [
+    {
+      id: "MAN-0104",
+      device: "REP-003",
+      type: "Preventiva",
+      tech: "Marina Costa",
+      date: isoDate(),
+      note: "Inspeção visual do gabinete e conferência dos conectores.",
+    },
+    {
+      id: "MAN-0103",
+      device: "REP-001",
+      type: "Inspeção",
+      tech: "Lucas Almeida",
+      date: isoDate(),
+      note: "Verificação de temperatura e alimentação.",
+    },
+    {
+      id: "MAN-0102",
+      device: "REP-002",
+      type: "Corretiva",
+      tech: "Rafael Souza",
+      date: isoDate(),
+      note: "Verificar elevação de temperatura no próximo ciclo.",
+    },
+  ];
 
-// Histórico de telemetria recebido da API
-let telemetryHistory = [];
+  // Histórico de telemetria recebido da API
+  let telemetryHistory = [];
 
-let activeView='dashboard';
-const VIEW_STORAGE_KEY = 'trace-rep-active-view';
-let activeDetailId = null;
+  let activeView = "dashboard";
+  const VIEW_STORAGE_KEY = "trace-rep-active-view";
+  let activeDetailId = null;
 
-// Recupera a última aba ativa salva no sessionStorage ou define 'dashboard' como padrão
-let savedView = 'dashboard';
-try {
-    savedView = sessionStorage.getItem(VIEW_STORAGE_KEY) || 'dashboard';
-} catch (error) {
-    console.warn('Não foi possível recuperar a página anterior.', error);
-}
-/* Dinamizar viewnames tbm */
-const viewNames={dashboard:'Visão geral',repeaters:'Repetidoras',alerts:'Central de alertas',maintenance:'Manutenções',reports:'Relatórios',requirements:'Stack & requisitos'};
-const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const stLabel = s => ({ok:'Normal',warn:'Atenção',bad:'Offline'}[s]||s);
-const stClass = s => ({ok:'status-ok',warn:'status-warn',bad:'status-bad'}[s]||'status-neutral');
-const sevLabel = s=>({critical:'Crítico',warning:'Atenção',info:'Informativo'}[s]||s);
-const sevClass = s=>({critical:'status-bad',warning:'status-warn',info:'status-neutral'}[s]||'status-neutral');
-const online = () => repeaters.filter(r=>r.status!=='bad').length;
-const healthy = () => repeaters.filter(r=>r.status==='ok').length;
-const activeAlerts = () => alerts.filter(a=>!a.ack).length;
-function showToast(msg,kind='ok'){
-    const el=document.createElement('div');
-    el.className = 'toast'+(kind==='error'?' error':'');
-    el.textContent=msg;
-    $('#toastRegion').appendChild(el);
-    setTimeout(()=>el.remove(),3600);
-}
+  // Recupera a última aba ativa salva no sessionStorage ou define 'dashboard' como padrão
+  let savedView = "dashboard";
+  try {
+    savedView = sessionStorage.getItem(VIEW_STORAGE_KEY) || "dashboard";
+  } catch (error) {
+    console.warn("Não foi possível recuperar a página anterior.", error);
+  }
+  /* Dinamizar viewnames tbm */
+  const viewNames = {
+    dashboard: "Visão geral",
+    repeaters: "Repetidoras",
+    alerts: "Central de alertas",
+    maintenance: "Manutenções",
+    reports: "Relatórios",
+    requirements: "Stack & requisitos",
+  };
+  const esc = (s) =>
+    String(s ?? "").replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[c],
+    );
+  const stLabel = (s) =>
+    ({ ok: "Normal", warn: "Atenção", bad: "Offline" })[s] || s;
+  const stClass = (s) =>
+    ({ ok: "status-ok", warn: "status-warn", bad: "status-bad" })[s] ||
+    "status-neutral";
+  const sevLabel = (s) =>
+    ({ critical: "Crítico", warning: "Atenção", info: "Informativo" })[s] || s;
+  const sevClass = (s) =>
+    ({
+      critical: "status-bad",
+      warning: "status-warn",
+      info: "status-neutral",
+    })[s] || "status-neutral";
+  const online = () => repeaters.filter((r) => r.status !== "bad").length;
+  const healthy = () => repeaters.filter((r) => r.status === "ok").length;
+  const activeAlerts = () => alerts.filter((a) => !a.ack).length;
+  function showToast(msg, kind = "ok") {
+    const el = document.createElement("div");
+    el.className = "toast" + (kind === "error" ? " error" : "");
+    el.textContent = msg;
+    $("#toastRegion").appendChild(el);
+    setTimeout(() => el.remove(), 3600);
+  }
 
+  const API_URL = "/api";
 
-const API_URL = '/api';
-
-async function loadDataFromApi(silent = false) {
+  async function loadDataFromApi(silent = false) {
     try {
-        const responses = await Promise.all([
-            fetch(`${API_URL}/repeaters`),
-            fetch(`${API_URL}/alerts`),
-            fetch(`${API_URL}/maintenances`),
-            ]);
+      const responses = await Promise.all([
+        fetch(`${API_URL}/repeaters`),
+        fetch(`${API_URL}/alerts`),
+        fetch(`${API_URL}/maintenances`),
+      ]);
 
-        if (responses.some(response => !response.ok)) {
-            throw new Error('Não foi possível carregar os dados da API.');
-        }
+      if (responses.some((response) => !response.ok)) {
+        throw new Error("Não foi possível carregar os dados da API.");
+      }
 
-        const [apiRepeaters, apiAlerts, apiMaintenances] =
-            await Promise.all(responses.map(response => response.json()));
+      const [apiRepeaters, apiAlerts, apiMaintenances] = await Promise.all(
+        responses.map((response) => response.json()),
+      );
 
-        repeaters = apiRepeaters;
-        alerts = apiAlerts;
-        maintenances = apiMaintenances;
-        await loadTelemetryHistory();
+      repeaters = apiRepeaters;
+      alerts = apiAlerts;
+      maintenances = apiMaintenances;
+      await loadTelemetryHistory();
 
-        renderAll();
-        if (activeDetailId && $('#modalBackdrop').dataset.open === '1') {
+      renderAll();
+      if (activeDetailId && $("#modalBackdrop").dataset.open === "1") {
         detailModal(activeDetailId);
-        }
-        if (!silent) {
-            showToast('Dados carregados da API.');
-        }
+      }
+      if (!silent) {
+        showToast("Dados carregados da API.");
+      }
     } catch (error) {
-        console.error(error);
+      console.error(error);
 
-        if (!silent) {
-            showToast('Não foi possível conectar à API. Exibindo dados locais.', 'error');
-        }
+      if (!silent) {
+        showToast(
+          "Não foi possível conectar à API. Exibindo dados locais.",
+          "error",
+        );
+      }
     }
-}
+  }
 
-
-function go(view){
-    activeView=view;
+  function go(view) {
+    activeView = view;
     try {
-    sessionStorage.setItem(VIEW_STORAGE_KEY, view);
+      sessionStorage.setItem(VIEW_STORAGE_KEY, view);
     } catch (error) {
-    console.warn('Não foi possível salvar a página atual.', error);
+      console.warn("Não foi possível salvar a página atual.", error);
     }
-    $$('.view').forEach(e=>e.classList.toggle('active',e.id==='view-'+view));
-    $$('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
-    $('#crumbTitle').textContent=viewNames[view]||'TRACE-REP';
-    renderAll();window.scrollTo({top:0,behavior:'smooth'});
-}
-function repeaterStatusBadge(r){
+    $$(".view").forEach((e) =>
+      e.classList.toggle("active", e.id === "view-" + view),
+    );
+    $$("[data-view]").forEach((b) =>
+      b.classList.toggle("active", b.dataset.view === view),
+    );
+    $("#crumbTitle").textContent = viewNames[view] || "TRACE-REP";
+    renderAll();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  function repeaterStatusBadge(r) {
     return `<span class="status ${stClass(r.status)}">${stLabel(r.status)}</span>`;
-}
-function renderStats(){
+  }
+  function renderStats() {
     const stats = [
-        {label:'Repetidoras cadastradas',value:repeaters.length,foot:'Equipamentos no inventário',icon:'▤',tone:'blue'},
-        {label:'Funcionamento normal',value:healthy(),foot:`${repeaters.length?Math.round(healthy()/repeaters.length*100):0}% do inventário`,icon:'✓',tone:'green'},
-        {label:'Precisam de atenção',value:repeaters.filter(r=>r.status==='warn').length,foot:'Verifique temperatura e tensão',icon:'!',tone:'amber'},
-        {label:'Sem comunicação',value:repeaters.filter(r=>r.status==='bad').length,foot:'Último contato expirado',icon:'⌁',tone:'red'}
-];
-    $('#statsGrid').innerHTML = stats.map(s=>`
+      {
+        label: "Repetidoras cadastradas",
+        value: repeaters.length,
+        foot: "Equipamentos no inventário",
+        icon: "▤",
+        tone: "blue",
+      },
+      {
+        label: "Funcionamento normal",
+        value: healthy(),
+        foot: `${repeaters.length ? Math.round((healthy() / repeaters.length) * 100) : 0}% do inventário`,
+        icon: "✓",
+        tone: "green",
+      },
+      {
+        label: "Precisam de atenção",
+        value: repeaters.filter((r) => r.status === "warn").length,
+        foot: "Verifique temperatura e tensão",
+        icon: "!",
+        tone: "amber",
+      },
+      {
+        label: "Sem comunicação",
+        value: repeaters.filter((r) => r.status === "bad").length,
+        foot: "Último contato expirado",
+        icon: "⌁",
+        tone: "red",
+      },
+    ];
+    $("#statsGrid").innerHTML = stats
+      .map(
+        (s) => `
         <article class="card stat-card">
             <div class="stat-top">
                 <div class="stat-label">${s.label}</div>
@@ -135,120 +318,129 @@ function renderStats(){
             </div>
             <div class="stat-value">${s.value}</div>
             <div class="stat-foot">${s.foot}</div>
-        </article>`).join('');
-    $('#navAlertCount').textContent=activeAlerts();
-    $('#navAlertCount').style.display=activeAlerts()?'':'none';
-}
+        </article>`,
+      )
+      .join("");
+    $("#navAlertCount").textContent = activeAlerts();
+    $("#navAlertCount").style.display = activeAlerts() ? "" : "none";
+  }
 
-function chartRangeSeconds() {
-    return Number($('#chartRange')?.value || 43200);
-}
+  function chartRangeSeconds() {
+    return Number($("#chartRange")?.value || 43200);
+  }
 
-async function loadTelemetryHistory() {
+  async function loadTelemetryHistory() {
     try {
-        const seconds = chartRangeSeconds();
+      const seconds = chartRangeSeconds();
 
-        const response = await fetch(
-            `${API_URL}/telemetry?seconds=${seconds}`
-        );
+      const response = await fetch(`${API_URL}/telemetry?seconds=${seconds}`);
 
-        if (!response.ok) {
-            throw new Error('Não foi possível carregar o histórico de telemetria.');
-        }
+      if (!response.ok) {
+        throw new Error("Não foi possível carregar o histórico de telemetria.");
+      }
 
-        telemetryHistory = await response.json();
-        console.log('Telemetria carregada:', telemetryHistory);
-
+      telemetryHistory = await response.json();
+      console.log("Telemetria carregada:", telemetryHistory);
     } catch (error) {
-        console.error('Erro ao carregar histórico de telemetria:', error);
+      console.error("Erro ao carregar histórico de telemetria:", error);
     }
-}
+  }
 
-function renderChart() {
-    const svg = $('#telemetryChart');
+  function renderChart() {
+    const svg = $("#telemetryChart");
     if (!svg) return;
 
-    const W = 620, H = 235;
-    const L = 42, R = 32, T = 13, B = 32;
+    const W = 620,
+      H = 235;
+    const L = 42,
+      R = 32,
+      T = 13,
+      B = 32;
     const plotW = W - L - R;
     const plotH = H - T - B;
 
     const seconds = chartRangeSeconds();
-    const bucketSize = seconds <= 120 ? 15000 :
-                       seconds <= 21600 ? 300000 :
-                       seconds <= 43200 ? 600000 : 1200000;
+    const bucketSize =
+      seconds <= 120
+        ? 15000
+        : seconds <= 21600
+          ? 300000
+          : seconds <= 43200
+            ? 600000
+            : 1200000;
 
-    const selectedRepeater = $('#chartRepeater')?.value || 'all';
+    const selectedRepeater = $("#chartRepeater")?.value || "all";
 
-    const filteredHistory = selectedRepeater === 'all'
+    const filteredHistory =
+      selectedRepeater === "all"
         ? telemetryHistory
-        : telemetryHistory.filter(row =>
-            row.repeater_id === selectedRepeater
-        );
+        : telemetryHistory.filter(
+            (row) => row.repeater_id === selectedRepeater,
+          );
 
     const buckets = new Map();
 
-    filteredHistory.forEach(row => {
-        const timestamp = new Date(row.recorded_at).getTime();
+    filteredHistory.forEach((row) => {
+      const timestamp = new Date(row.recorded_at).getTime();
 
-        if (!Number.isFinite(timestamp)) return;
+      if (!Number.isFinite(timestamp)) return;
 
-        const key = Math.floor(timestamp / bucketSize);
-        if (!buckets.has(key)) {
-            buckets.set(key, {
-                timestamp: key * bucketSize,
-                temps: [],
-                signals: []
-            });
-        }
+      const key = Math.floor(timestamp / bucketSize);
+      if (!buckets.has(key)) {
+        buckets.set(key, {
+          timestamp: key * bucketSize,
+          temps: [],
+          signals: [],
+        });
+      }
 
-        const bucket = buckets.get(key);
+      const bucket = buckets.get(key);
 
-        if (Number.isFinite(Number(row.temp))) {
-            bucket.temps.push(Number(row.temp));
-        }
+      if (Number.isFinite(Number(row.temp))) {
+        bucket.temps.push(Number(row.temp));
+      }
 
-        if (Number.isFinite(Number(row.signal))) {
-            bucket.signals.push(Number(row.signal));
-        }
+      if (Number.isFinite(Number(row.signal))) {
+        bucket.signals.push(Number(row.signal));
+      }
     });
 
     const data = [...buckets.values()]
-        .sort((a, b) => a.timestamp - b.timestamp)
-        .map(bucket => ({
-            timestamp: bucket.timestamp,
-            temp: bucket.temps.length
-                ? bucket.temps.reduce((a, b) => a + b, 0) / bucket.temps.length
-                : null,
-            signal: bucket.signals.length
-                ? bucket.signals.reduce((a, b) => a + b, 0) / bucket.signals.length
-                : null
-        }))
-        .filter(point => point.temp !== null || point.signal !== null);
+      .sort((a, b) => a.timestamp - b.timestamp)
+      .map((bucket) => ({
+        timestamp: bucket.timestamp,
+        temp: bucket.temps.length
+          ? bucket.temps.reduce((a, b) => a + b, 0) / bucket.temps.length
+          : null,
+        signal: bucket.signals.length
+          ? bucket.signals.reduce((a, b) => a + b, 0) / bucket.signals.length
+          : null,
+      }))
+      .filter((point) => point.temp !== null || point.signal !== null);
 
     if (!data.length) {
-        svg.innerHTML = `
+      svg.innerHTML = `
             <text x="${W / 2}" y="${H / 2}"
                 fill="var(--muted)"
                 font-size="12"
                 text-anchor="middle">
                 Aguardando dados de telemetria...
             </text>`;
-        return;
+      return;
     }
 
-    const x = i => data.length === 1
-        ? L + plotW / 2
-        : L + (i / (data.length - 1)) * plotW;
+    const x = (i) =>
+      data.length === 1 ? L + plotW / 2 : L + (i / (data.length - 1)) * plotW;
 
-    const yT = v => T + (70 - v) / 70 * plotH;
-    const yS = v => T + (100 - v) / 100 * plotH;
+    const yT = (v) => T + ((70 - v) / 70) * plotH;
+    const yS = (v) => T + ((100 - v) / 100) * plotH;
 
-    const lines = [0, 20, 40, 60].map(v => {
-    const y = yT(v);
-    const percent = Math.round((v / 70) * 100);
+    const lines = [0, 20, 40, 60]
+      .map((v) => {
+        const y = yT(v);
+        const percent = Math.round((v / 70) * 100);
 
-    return `
+        return `
         <line x1="${L}" y1="${y}" x2="${W - R}" y2="${y}"
             stroke="var(--border)" stroke-dasharray="3 4"/>
 
@@ -261,49 +453,60 @@ function renderChart() {
             fill="var(--muted)" font-size="9" text-anchor="start">
             ${percent}%
         </text>`;
-    }).join('');
+      })
+      .join("");
 
     const tempData = data
-        .map((point, i) => ({ x: x(i), y: point.temp === null ? null : yT(point.temp) }))
-        .filter(point => point.y !== null);
+      .map((point, i) => ({
+        x: x(i),
+        y: point.temp === null ? null : yT(point.temp),
+      }))
+      .filter((point) => point.y !== null);
 
     const signalData = data
-        .map((point, i) => ({ x: x(i), y: point.signal === null ? null : yS(point.signal) }))
-        .filter(point => point.y !== null);
+      .map((point, i) => ({
+        x: x(i),
+        y: point.signal === null ? null : yS(point.signal),
+      }))
+      .filter((point) => point.y !== null);
 
     const makeLine = (points, color) => {
-        if (!points.length) return '';
+      if (!points.length) return "";
 
-        const polyline = points.map(p => `${p.x},${p.y}`).join(' ');
+      const polyline = points.map((p) => `${p.x},${p.y}`).join(" ");
 
-        const circles = points.map(p => `
+      const circles = points
+        .map(
+          (p) => `
             <circle cx="${p.x}" cy="${p.y}" r="3"
                 fill="${color}" stroke="var(--surface)" stroke-width="1.5"/>
-        `).join('');
+        `,
+        )
+        .join("");
 
-        return `
+      return `
             <polyline points="${polyline}" fill="none"
                 stroke="${color}" stroke-width="2.5"
                 stroke-linecap="round" stroke-linejoin="round"/>
             ${circles}`;
     };
 
-    const labelIndexes = [...new Set([
-        0,
-        Math.floor((data.length - 1) / 2),
-        data.length - 1
-    ])];
+    const labelIndexes = [
+      ...new Set([0, Math.floor((data.length - 1) / 2), data.length - 1]),
+    ];
 
-    const labels = labelIndexes.map(i => {
+    const labels = labelIndexes
+      .map((i) => {
         const date = new Date(data[i].timestamp);
-        const label = seconds <= 120
-            ? date.toLocaleTimeString('pt-BR', {
-                minute: '2-digit',
-                second: '2-digit'
+        const label =
+          seconds <= 120
+            ? date.toLocaleTimeString("pt-BR", {
+                minute: "2-digit",
+                second: "2-digit",
               })
-            : date.toLocaleTimeString('pt-BR', {
-                hour: '2-digit',
-                minute: '2-digit'
+            : date.toLocaleTimeString("pt-BR", {
+                hour: "2-digit",
+                minute: "2-digit",
               });
 
         return `
@@ -311,53 +514,84 @@ function renderChart() {
                 fill="var(--muted)" font-size="9" text-anchor="middle">
                 ${label}
             </text>`;
-    }).join('');
+      })
+      .join("");
 
     svg.innerHTML = `
         ${lines}
-        ${makeLine(tempData, '#5b78ee')}
-        ${makeLine(signalData, '#25b889')}
+        ${makeLine(tempData, "#5b78ee")}
+        ${makeLine(signalData, "#25b889")}
         ${labels}
     `;
-}
+  }
 
-
-function renderHealth(){
-    const total=repeaters.length||1;
-    const h=[
-        {name:'Equipamentos comunicando',desc:'Conectividade recebida',value:`${online()} de ${repeaters.length}`,pct:online()/total*100,color:'var(--green)',tone:'green'},
-        {name:'Temperatura sob controle',desc:'Abaixo do limite demonstrativo',value:`${repeaters.filter(r=>r.status==='ok').length} equipamentos`,pct:healthy()/total*100,color:'var(--green)',tone:'green'},
-        {name:'Alertas não reconhecidos',desc:'Ocorrências aguardando revisão',value:String(activeAlerts()),pct:Math.min(100,activeAlerts()/Math.max(1,alerts.length)*100),color:activeAlerts()?'var(--amber)':'var(--green)',tone:activeAlerts()?'amber':'green'}
+  function renderHealth() {
+    const total = repeaters.length || 1;
+    const h = [
+      {
+        name: "Equipamentos comunicando",
+        desc: "Conectividade recebida",
+        value: `${online()} de ${repeaters.length}`,
+        pct: (online() / total) * 100,
+        color: "var(--green)",
+        tone: "green",
+      },
+      {
+        name: "Temperatura sob controle",
+        desc: "Abaixo do limite demonstrativo",
+        value: `${repeaters.filter((r) => r.status === "ok").length} equipamentos`,
+        pct: (healthy() / total) * 100,
+        color: "var(--green)",
+        tone: "green",
+      },
+      {
+        name: "Alertas não reconhecidos",
+        desc: "Ocorrências aguardando revisão",
+        value: String(activeAlerts()),
+        pct: Math.min(100, (activeAlerts() / Math.max(1, alerts.length)) * 100),
+        color: activeAlerts() ? "var(--amber)" : "var(--green)",
+        tone: activeAlerts() ? "amber" : "green",
+      },
     ];
- $('#healthSummary').innerHTML = h.map(a=>`
+    $("#healthSummary").innerHTML = h
+      .map(
+        (a) => `
     <div class="health-row">
         <div class="health-symbol tone-${a.tone}">◉</div>
         <div class="health-info">
             <div class="health-name">${a.name}</div>
             <div class="health-desc">${a.desc}</div>
             <div class="health-bar">
-                <span style="width:${Math.max(3,a.pct)}%;background:${a.color}"></span>
+                <span style="width:${Math.max(3, a.pct)}%;background:${a.color}"></span>
             </div>
         </div>
         <div class="health-value">${a.value}</div>
-    </div>`).join('');
- $('#reportHealth').innerHTML = h.map(a=>`
+    </div>`,
+      )
+      .join("");
+    $("#reportHealth").innerHTML = h
+      .map(
+        (a) => `
     <div class="health-row">
         <div class="health-symbol tone-${a.tone}">◉</div>
         <div class="health-info">
             <div class="health-name">${a.name}</div>
             <div class="health-desc">${a.desc}</div>
             <div class="health-bar">
-                <span style="width:${Math.max(3,a.pct)}%;background:${a.color}"></span>
+                <span style="width:${Math.max(3, a.pct)}%;background:${a.color}"></span>
             </div>
         </div>
         <div class="health-value">${a.value}</div>
-    </div>`).join('');
-}
+    </div>`,
+      )
+      .join("");
+  }
 
-function renderDashboardTable(){
-    const rows=repeaters.slice(0,4);
-    $('#dashboardRepeaters').innerHTML = rows.map(r=>`
+  function renderDashboardTable() {
+    const rows = repeaters.slice(0, 4);
+    $("#dashboardRepeaters").innerHTML = rows
+      .map(
+        (r) => `
         <tr>
             <td>
                 <div class="device-cell">
@@ -369,32 +603,49 @@ function renderDashboardTable(){
                 </div>
             </td>
             <td>${repeaterStatusBadge(r)}</td>
-            <td>${r.temp===null?'—':r.temp.toFixed(1)+' °C'}</td>
-            <td>${r.voltage===null?'—':r.voltage.toFixed(1)+' V'}</td>
+            <td>${r.temp === null ? "—" : r.temp.toFixed(1) + " °C"}</td>
+            <td>${r.voltage === null ? "—" : r.voltage.toFixed(1) + " V"}</td>
             <td style="color:var(--muted)">${esc(r.updated)}</td>
-        </tr>`).join('');
-}
+        </tr>`,
+      )
+      .join("");
+  }
 
-function renderRecentAlerts(){
-    const items = alerts.slice().sort((a,b)=>a.ack-b.ack).
-    slice(0,4);$('#recentAlerts').innerHTML = items.length?items.map(a=>`
+  function renderRecentAlerts() {
+    const items = alerts
+      .slice()
+      .sort((a, b) => a.ack - b.ack)
+      .slice(0, 4);
+    $("#recentAlerts").innerHTML = items.length
+      ? items
+          .map(
+            (a) => `
         <div class="alert-item">
-            <div class="alert-symbol ${a.severity==='critical'?'tone-red':a.severity==='warning'?'tone-amber':'tone-blue'}">
-                ${a.severity==='critical'?'!':a.severity==='warning'?'⚠':'i'}
+            <div class="alert-symbol ${a.severity === "critical" ? "tone-red" : a.severity === "warning" ? "tone-amber" : "tone-blue"}">
+                ${a.severity === "critical" ? "!" : a.severity === "warning" ? "⚠" : "i"}
             </div>
             <div class="alert-copy">
                 <div class="alert-title">${esc(a.title)}</div>
                 <div class="alert-detail">${esc(a.device)} · ${esc(a.description)}</div>
             </div>
             <div class="alert-time">${esc(a.time)}</div>
-        </div>`).join(''):'<div class="empty-state">Nenhum evento registrado.</div>';
-}
+        </div>`,
+          )
+          .join("")
+      : '<div class="empty-state">Nenhum evento registrado.</div>';
+  }
 
-function renderRepeaters(){
-    const q=($('#repeaterSearch')?.value||'').trim().toLowerCase();
-    const f=$('#statusFilter')?.value||'all';
-    const list=repeaters.filter(r=>(f==='all'||r.status===f)&&`${r.id} ${r.name} ${r.location}`.toLowerCase().includes(q));
-    $('#allRepeaters').innerHTML = list.map(r=>`
+  function renderRepeaters() {
+    const q = ($("#repeaterSearch")?.value || "").trim().toLowerCase();
+    const f = $("#statusFilter")?.value || "all";
+    const list = repeaters.filter(
+      (r) =>
+        (f === "all" || r.status === f) &&
+        `${r.id} ${r.name} ${r.location}`.toLowerCase().includes(q),
+    );
+    $("#allRepeaters").innerHTML = list
+      .map(
+        (r) => `
         <tr>
             <td>
                 <div class="device-cell">
@@ -407,12 +658,12 @@ function renderRepeaters(){
             </td>
             <td>${esc(r.location)}</td>
             <td>${repeaterStatusBadge(r)}</td>
-            <td>${r.temp===null?'—':r.temp.toFixed(1)+' °C'}</td>
-            <td>${r.voltage===null?'—':r.voltage.toFixed(1)+' V'}</td>
+            <td>${r.temp === null ? "—" : r.temp.toFixed(1) + " °C"}</td>
+            <td>${r.voltage === null ? "—" : r.voltage.toFixed(1) + " V"}</td>
             <td>
                 <div style="display:flex;align-items:center;gap:8px">
                     <div class="health-bar" style="width:58px;margin:0">
-                        <span style="width:${r.signal}%;background:${r.signal<50?'var(--amber)':'var(--green)'}"></span>
+                        <span style="width:${r.signal}%;background:${r.signal < 50 ? "var(--amber)" : "var(--green)"}"></span>
                     </div>
                     <span>${r.signal}%</span>
                 </div>
@@ -422,15 +673,25 @@ function renderRepeaters(){
                  · 
                 <button class="action-link" data-maint-device="${esc(r.id)}">Manutenção</button>
             </td>
-        </tr>`).join('');
-        $('#repeaterEmpty').style.display=list.length?'none':'block';
-}
+        </tr>`,
+      )
+      .join("");
+    $("#repeaterEmpty").style.display = list.length ? "none" : "block";
+  }
 
-function renderAlerts(){
-    const f=$('#alertFilter')?.value||'all';
-    const sv=$('#alertSeverity')?.value||'all';
-    const list=alerts.filter(a=>(f==='all'||(f==='active'?!a.ack:a.ack))&&(sv==='all'||a.severity===sv)).sort((a,b)=>a.ack-b.ack);
-    $('#alertsTable').innerHTML = list.map(a=>`
+  function renderAlerts() {
+    const f = $("#alertFilter")?.value || "all";
+    const sv = $("#alertSeverity")?.value || "all";
+    const list = alerts
+      .filter(
+        (a) =>
+          (f === "all" || (f === "active" ? !a.ack : a.ack)) &&
+          (sv === "all" || a.severity === sv),
+      )
+      .sort((a, b) => a.ack - b.ack);
+    $("#alertsTable").innerHTML = list
+      .map(
+        (a) => `
         <tr>
             <td>
                 <div class="device-id">${esc(a.title)}</div>
@@ -444,21 +705,29 @@ function renderAlerts(){
             </td>
             <td>${esc(a.time)}</td>
             <td>
-                <span class="status ${a.ack?'status-neutral':'status-warn'}">${a.ack?'Reconhecido':'Pendente'}</span>
+                <span class="status ${a.ack ? "status-neutral" : "status-warn"}">${a.ack ? "Reconhecido" : "Pendente"}</span>
             </td>
             <td>
-                ${a.ack?'<span style="color:var(--muted);font-size:10px">Concluído</span>':`<button class="action-link" data-ack="${a.id}">Reconhecer</button>`}
+                ${a.ack ? '<span style="color:var(--muted);font-size:10px">Concluído</span>' : `<button class="action-link" data-ack="${a.id}">Reconhecer</button>`}
             </td>
-        </tr>`).join('');
-        $('#alertsEmpty').style.display = list.length?'none':'block';
-        $('#navAlertCount').textContent=activeAlerts();
-        $('#navAlertCount').style.display=activeAlerts()?'':'none';
-}
+        </tr>`,
+      )
+      .join("");
+    $("#alertsEmpty").style.display = list.length ? "none" : "block";
+    $("#navAlertCount").textContent = activeAlerts();
+    $("#navAlertCount").style.display = activeAlerts() ? "" : "none";
+  }
 
-function renderMaintenance(){
-    const q=($('#maintenanceSearch')?.value||'').toLowerCase();
-    const list=maintenances.filter(m=>`${m.id} ${m.device} ${m.tech} ${m.type} ${m.note}`.toLowerCase().includes(q));
-    $('#maintenanceTable').innerHTML = list.map(m=>`
+  function renderMaintenance() {
+    const q = ($("#maintenanceSearch")?.value || "").toLowerCase();
+    const list = maintenances.filter((m) =>
+      `${m.id} ${m.device} ${m.tech} ${m.type} ${m.note}`
+        .toLowerCase()
+        .includes(q),
+    );
+    $("#maintenanceTable").innerHTML = list
+      .map(
+        (m) => `
         <tr>
             <td>
                 <span class="device-id">${esc(m.id)}</span>
@@ -470,14 +739,42 @@ function renderMaintenance(){
             <td>${esc(m.tech)}</td>
             <td>${esc(m.date)}</td>
             <td style="white-space:normal;min-width:170px;max-width:260px;color:var(--muted);line-height:1.5">${esc(m.note)}</td>
-        </tr>`).join('');
-    $('#maintenanceEmpty').style.display=list.length?'none':'block';
-    $('#maintenanceStats').innerHTML=[
-        {label:'Serviços registrados',value:maintenances.length,tone:'blue',icon:'⌁',foot:'Nesta demonstração'},
-        {label:'Preventivas',value:maintenances.filter(m=>m.type==='Preventiva').length,tone:'green',icon:'✓',foot:'Manutenção planejada'},
-        {label:'Corretivas',value:maintenances.filter(m=>m.type==='Corretiva').length,tone:'amber',icon:'⚒',foot:'Atuação sobre falha'},
-        {label:'Equipamentos atendidos',value:new Set(maintenances.map(m=>m.device)).size,tone:'blue',icon:'▤',foot:'IDs distintos'}
-    ].map(s=>`
+        </tr>`,
+      )
+      .join("");
+    $("#maintenanceEmpty").style.display = list.length ? "none" : "block";
+    $("#maintenanceStats").innerHTML = [
+      {
+        label: "Serviços registrados",
+        value: maintenances.length,
+        tone: "blue",
+        icon: "⌁",
+        foot: "Nesta demonstração",
+      },
+      {
+        label: "Preventivas",
+        value: maintenances.filter((m) => m.type === "Preventiva").length,
+        tone: "green",
+        icon: "✓",
+        foot: "Manutenção planejada",
+      },
+      {
+        label: "Corretivas",
+        value: maintenances.filter((m) => m.type === "Corretiva").length,
+        tone: "amber",
+        icon: "⚒",
+        foot: "Atuação sobre falha",
+      },
+      {
+        label: "Equipamentos atendidos",
+        value: new Set(maintenances.map((m) => m.device)).size,
+        tone: "blue",
+        icon: "▤",
+        foot: "IDs distintos",
+      },
+    ]
+      .map(
+        (s) => `
         <article class="card stat-card">
             <div class="stat-top">
                 <div class="stat-label">${s.label}</div>
@@ -485,55 +782,85 @@ function renderMaintenance(){
             </div>
             <div class="stat-value">${s.value}</div>
             <div class="stat-foot">${s.foot}</div>
-        </article>`).join('');
-}
+        </article>`,
+      )
+      .join("");
+  }
 
-function renderReports(){
-    let count={critical:alerts.filter(a=>a.severity==='critical').length,warning:alerts.filter(a=>a.severity==='warning').length,info:alerts.filter(a=>a.severity==='info').length};
-    $('#reportStats').innerHTML = [
-        {label:'Disponibilidade ilustrativa',value:`${repeaters.length?Math.round(online()/repeaters.length*100):0}%`,note:'Equipamentos comunicando'},
-        {label:'Alertas pendentes',value:activeAlerts(),note:'Exigem revisão'},
-        {label:'Manutenções registradas',value:maintenances.length,note:'Histórico de demonstração'}
-    ].map((s,i)=>`
+  function renderReports() {
+    let count = {
+      critical: alerts.filter((a) => a.severity === "critical").length,
+      warning: alerts.filter((a) => a.severity === "warning").length,
+      info: alerts.filter((a) => a.severity === "info").length,
+    };
+    $("#reportStats").innerHTML = [
+      {
+        label: "Disponibilidade ilustrativa",
+        value: `${repeaters.length ? Math.round((online() / repeaters.length) * 100) : 0}%`,
+        note: "Equipamentos comunicando",
+      },
+      {
+        label: "Alertas pendentes",
+        value: activeAlerts(),
+        note: "Exigem revisão",
+      },
+      {
+        label: "Manutenções registradas",
+        value: maintenances.length,
+        note: "Histórico de demonstração",
+      },
+    ]
+      .map(
+        (s, i) => `
         <article class="card report-metric">
             <div class="stat-label">${s.label}</div>
             <div class="report-value">${s.value}</div>
             <div class="report-label">${s.note}</div>
-        </article>`).join('');
-    let max=Math.max(1,count.critical,count.warning,count.info);
-    $('#alertBars').innerHTML=[
-        ['Crítico',count.critical],
-        ['Atenção',count.warning],
-        ['Informativo',count.info]
-    ].map(([l,v])=>`
+        </article>`,
+      )
+      .join("");
+    let max = Math.max(1, count.critical, count.warning, count.info);
+    $("#alertBars").innerHTML = [
+      ["Crítico", count.critical],
+      ["Atenção", count.warning],
+      ["Informativo", count.info],
+    ]
+      .map(
+        ([l, v]) => `
         <div class="bar-col">
             <div class="bar-val">${v}</div>
-            <div class="bar" style="height:${Math.max(5,v/max*130)}px;background:${l==='Crítico'?'linear-gradient(180deg,#ef8f96,#dc5962)':l==='Atenção'?'linear-gradient(180deg,#efc26c,#cb861a)':'linear-gradient(180deg,#8ca0ff,#5b78ee)'}"></div>
+            <div class="bar" style="height:${Math.max(5, (v / max) * 130)}px;background:${l === "Crítico" ? "linear-gradient(180deg,#ef8f96,#dc5962)" : l === "Atenção" ? "linear-gradient(180deg,#efc26c,#cb861a)" : "linear-gradient(180deg,#8ca0ff,#5b78ee)"}"></div>
             <div class="bar-label">${l}</div>
-        </div>`).join('');
-}
+        </div>`,
+      )
+      .join("");
+  }
 
-function renderChartRepeaterOptions() {
-    const select = $('#chartRepeater');
+  function renderChartRepeaterOptions() {
+    const select = $("#chartRepeater");
     if (!select) return;
 
     const currentValue = select.value;
 
     select.innerHTML = `
         <option value="all">Todas as repetidoras</option>
-        ${repeaters.map(repeater => `
+        ${repeaters
+          .map(
+            (repeater) => `
             <option value="${repeater.id}">
                 ${repeater.id}
             </option>
-        `).join('')}
+        `,
+          )
+          .join("")}
     `;
 
-    if ([...select.options].some(option => option.value === currentValue)) {
-        select.value = currentValue;
+    if ([...select.options].some((option) => option.value === currentValue)) {
+      select.value = currentValue;
     }
-}
+  }
 
-function renderAll(){
+  function renderAll() {
     renderChartRepeaterOptions();
     renderStats();
     renderChart();
@@ -544,27 +871,38 @@ function renderAll(){
     renderAlerts();
     renderMaintenance();
     renderReports();
-}
+  }
 
-function openModal(title,subtitle,bodyHtml,onSubmit){
-    $('#modalTitle').textContent=title;
-    $('#modalSubtitle').textContent=subtitle;
-    $('#modalBody').innerHTML=bodyHtml;
-    $('#modalBackdrop').classList.add('open');
-    $('#modalBackdrop').dataset.open='1';
-    const form=$('#modalForm');
-    if(form)form.addEventListener('submit',e=>{e.preventDefault();onSubmit(new FormData(form));});
-    setTimeout(()=>$('#modalBody input, #modalBody select, #modalBody textarea')?.focus(),20);
-}
+  function openModal(title, subtitle, bodyHtml, onSubmit) {
+    $("#modalTitle").textContent = title;
+    $("#modalSubtitle").textContent = subtitle;
+    $("#modalBody").innerHTML = bodyHtml;
+    $("#modalBackdrop").classList.add("open");
+    $("#modalBackdrop").dataset.open = "1";
+    const form = $("#modalForm");
+    if (form)
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        onSubmit(new FormData(form));
+      });
+    setTimeout(
+      () =>
+        $("#modalBody input, #modalBody select, #modalBody textarea")?.focus(),
+      20,
+    );
+  }
 
-function closeModal(){
-    $('#modalBackdrop').classList.remove('open');
-    $('#modalBackdrop').dataset.open='';
+  function closeModal() {
+    $("#modalBackdrop").classList.remove("open");
+    $("#modalBackdrop").dataset.open = "";
     activeDetailId = null;
-}
+  }
 
-function repeaterModal(){
-    openModal('Cadastrar repetidora','Adicione um equipamento ao inventário de demonstração.',`
+  function repeaterModal() {
+    openModal(
+      "Cadastrar repetidora",
+      "Adicione um equipamento ao inventário de demonstração.",
+      `
         <form id="modalForm">
             <div class="form-grid" style="margin-top:0">
                 <div class="field">
@@ -602,17 +940,20 @@ function repeaterModal(){
                 <button type="submit" class="btn btn-primary">Cadastrar equipamento</button>
             </div>
 </form>`,
-()=>{}
+      () => {},
     );
-}
-function maintenanceModal(device=''){
-    openModal('Registrar manutenção','Registre uma intervenção vinculada à repetidora.',`
+  }
+  function maintenanceModal(device = "") {
+    openModal(
+      "Registrar manutenção",
+      "Registre uma intervenção vinculada à repetidora.",
+      `
         <form id="modalForm">
             <div class="form-grid" style="margin-top:0">
                 <div class="field">
                     <label for="mDevice">Repetidora *</label>
                     <select id="mDevice" name="device" required>
-                        ${repeaters.map(r=>`<option value="${esc(r.id)}" ${r.id===device?'selected':''}>${esc(r.id)} · ${esc(r.name)}</option>`).join('')}
+                        ${repeaters.map((r) => `<option value="${esc(r.id)}" ${r.id === device ? "selected" : ""}>${esc(r.id)} · ${esc(r.name)}</option>`).join("")}
                     </select>
                 </div>
                 <div class="field">
@@ -642,15 +983,18 @@ function maintenanceModal(device=''){
                 <button type="submit" class="btn btn-primary">Salvar registro</button>
             </div>
          </form>`,
-        ()=>{}
+      () => {},
     );
-}
+  }
 
-function detailModal(id){
+  function detailModal(id) {
     activeDetailId = id;
-    const r=repeaters.find(x=>x.id===id);
-    if(!r)return;
-    openModal(`${r.id} · Detalhes`,'Informações do equipamento de demonstração.',`
+    const r = repeaters.find((x) => x.id === id);
+    if (!r) return;
+    openModal(
+      `${r.id} · Detalhes`,
+      "Informações do equipamento de demonstração.",
+      `
         <div class="grid" style="gap:12px;grid-template-columns:repeat(2,minmax(0,1fr))">
             <div class="callout">
                 <div class="stat-label">Estado atual</div>
@@ -662,11 +1006,11 @@ function detailModal(id){
             </div>
             <div class="callout">
                 <div class="stat-label">Temperatura</div>
-                <div class="report-value" style="font-size:23px;margin:8px 0 0">${r.temp===null?'—':r.temp.toFixed(1)+'°'}</div>
+                <div class="report-value" style="font-size:23px;margin:8px 0 0">${r.temp === null ? "—" : r.temp.toFixed(1) + "°"}</div>
             </div>
             <div class="callout">
                 <div class="stat-label">Tensão</div>
-                <div class="report-value" style="font-size:23px;margin:8px 0 0">${r.voltage===null?'—':r.voltage.toFixed(1)+' V'}</div>
+                <div class="report-value" style="font-size:23px;margin:8px 0 0">${r.voltage === null ? "—" : r.voltage.toFixed(1) + " V"}</div>
             </div>
         </div>
         <div class="metric-list">
@@ -680,223 +1024,349 @@ function detailModal(id){
                 <span>Última atualização</span><strong>${esc(r.updated)}</strong>
             </div>
             <div class="metric-row">
-                <span>Coordenadas ilustrativas</span><strong>${r.lat != null && r.lng != null ? `${r.lat.toFixed(4)}, ${r.lng.toFixed(4)}` : 'Não cadastradas'}</strong>
+                <span>Coordenadas ilustrativas</span><strong>${r.lat != null && r.lng != null ? `${r.lat.toFixed(4)}, ${r.lng.toFixed(4)}` : "Não cadastradas"}</strong>
             </div>
         </div>
         <div class="notice">Leituras e coordenadas são dados demonstrativos, não medições reais.</div>
         <div class="form-actions">
             <button class="btn" data-close-modal>Fechar</button>
             <button class="btn btn-primary" id="detailMaintenance" data-device="${esc(id)}">Registrar manutenção</button>
-        </div>`,()=>{});
-}
+        </div>`,
+      () => {},
+    );
+  }
 
-function exportCSV(filename,rows){
-    const csv=rows.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');
-    const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;
-    a.download=filename;
+  function exportCSV(filename, rows) {
+    const csv = rows
+      .map((row) =>
+        row
+          .map((v) => '"' + String(v ?? "").replace(/"/g, '""') + '"')
+          .join(";"),
+      )
+      .join("\r\n");
+    const blob = new Blob(["\ufeff" + csv], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-    showToast('Arquivo CSV gerado com os dados atuais.');
-}
+    showToast("Arquivo CSV gerado com os dados atuais.");
+  }
 
-function exportRepeaters(){
-    exportCSV('trace-rep-repetidoras.csv',
-        [['ID','Nome','Localização','Status','Temperatura °C','Tensão V','Sinal simulado %','Última atualização'],
-        ...repeaters.map(r=>[r.id,r.name,r.location,stLabel(r.status),r.temp,r.voltage,r.signal,r.updated])]);
-}
+  function exportRepeaters() {
+    exportCSV("trace-rep-repetidoras.csv", [
+      [
+        "ID",
+        "Nome",
+        "Localização",
+        "Status",
+        "Temperatura °C",
+        "Tensão V",
+        "Sinal simulado %",
+        "Última atualização",
+      ],
+      ...repeaters.map((r) => [
+        r.id,
+        r.name,
+        r.location,
+        stLabel(r.status),
+        r.temp,
+        r.voltage,
+        r.signal,
+        r.updated,
+      ]),
+    ]);
+  }
 
-function exportMaintenances(){
-    exportCSV('trace-rep-manutencoes.csv',
-        [['Protocolo','Repetidora','Tipo','Técnico','Data','Observação'],
-        ...maintenances.map(m=>[m.id,m.device,m.type,m.tech,m.date,m.note])]);
-}
+  function exportMaintenances() {
+    exportCSV("trace-rep-manutencoes.csv", [
+      ["Protocolo", "Repetidora", "Tipo", "Técnico", "Data", "Observação"],
+      ...maintenances.map((m) => [
+        m.id,
+        m.device,
+        m.type,
+        m.tech,
+        m.date,
+        m.note,
+      ]),
+    ]);
+  }
 
-function exportReport(){
-    exportCSV('trace-rep-relatorio.csv',
-        [['Tipo','Identificador','Status/Tipo','Data','Descrição'],
-        ...repeaters.map(r=>['Repetidora',r.id,stLabel(r.status),r.updated,`${r.name}; temp ${r.temp}; tensao ${r.voltage}; sinal ${r.signal}%`]),
-        ...alerts.map(a=>['Alerta',a.device,sevLabel(a.severity),a.time,`${a.title} · ${a.description} · ${a.ack?'Reconhecido':'Pendente'}`]),
-        ...maintenances.map(m=>['Manutenção',m.device,m.type,m.date,`${m.id} · ${m.tech} · ${m.note}`])]);
-}
+  function exportReport() {
+    exportCSV("trace-rep-relatorio.csv", [
+      ["Tipo", "Identificador", "Status/Tipo", "Data", "Descrição"],
+      ...repeaters.map((r) => [
+        "Repetidora",
+        r.id,
+        stLabel(r.status),
+        r.updated,
+        `${r.name}; temp ${r.temp}; tensao ${r.voltage}; sinal ${r.signal}%`,
+      ]),
+      ...alerts.map((a) => [
+        "Alerta",
+        a.device,
+        sevLabel(a.severity),
+        a.time,
+        `${a.title} · ${a.description} · ${a.ack ? "Reconhecido" : "Pendente"}`,
+      ]),
+      ...maintenances.map((m) => [
+        "Manutenção",
+        m.device,
+        m.type,
+        m.date,
+        `${m.id} · ${m.tech} · ${m.note}`,
+      ]),
+    ]);
+  }
 
-// Main navigation and delegated controls.
+  // Main navigation and delegated controls.
 
-document.addEventListener('click',e=>{
-    const nav = e.target.closest('[data-view]');
-    if(nav){
-        go(nav.dataset.view);
-        $('#mobileNav').style.display='none';
-        return;
+  document.addEventListener("click", (e) => {
+    const nav = e.target.closest("[data-view]");
+    if (nav) {
+      go(nav.dataset.view);
+      $("#mobileNav").style.display = "none";
+      return;
     }
-    const goto = e.target.closest('[data-goto]');
-    if(goto){
-        go(goto.dataset.goto);
-        return;
+    const goto = e.target.closest("[data-goto]");
+    if (goto) {
+      go(goto.dataset.goto);
+      return;
     }
-    const detail = e.target.closest('[data-detail]');
-    if(detail){
-        detailModal(detail.dataset.detail);
-        return;
+    const detail = e.target.closest("[data-detail]");
+    if (detail) {
+      detailModal(detail.dataset.detail);
+      return;
     }
-    const mdev = e.target.closest('[data-maint-device]');
-    if(mdev){
-        maintenanceModal(mdev.dataset.maintDevice);
-        return;
+    const mdev = e.target.closest("[data-maint-device]");
+    if (mdev) {
+      maintenanceModal(mdev.dataset.maintDevice);
+      return;
     }
 
-    if(e.target.closest('[data-close-modal]')){
-        closeModal();return;
+    if (e.target.closest("[data-close-modal]")) {
+      closeModal();
+      return;
     }
-    if(e.target.id==='detailMaintenance'){
-        const id = e.target.dataset.device;
-        closeModal();
-        maintenanceModal(id);
-        return;
+    if (e.target.id === "detailMaintenance") {
+      const id = e.target.dataset.device;
+      closeModal();
+      maintenanceModal(id);
+      return;
     }
-});
+  });
 
-/* Event listeners */
-$('#newRepeater').addEventListener('click',repeaterModal);
-$('#newMaintenance').addEventListener('click',()=>maintenanceModal());
-$('#repeatersExport').addEventListener('click',exportRepeaters);
-$('#dashboardExport').addEventListener('click',exportReport);
-$('#reportExport').addEventListener('click',exportReport);
-$('#maintenanceExport').addEventListener('click',exportMaintenances);
-$('#chartRange').addEventListener('change', async () => {
+  /* Event listeners */
+  $("#newRepeater").addEventListener("click", repeaterModal);
+  $("#newMaintenance").addEventListener("click", () => maintenanceModal());
+  $("#repeatersExport").addEventListener("click", exportRepeaters);
+  $("#dashboardExport").addEventListener("click", exportReport);
+  $("#reportExport").addEventListener("click", exportReport);
+  $("#maintenanceExport").addEventListener("click", exportMaintenances);
+  $("#chartRange").addEventListener("change", async () => {
     await loadTelemetryHistory();
     renderChart();
-});
-$('#chartRepeater').addEventListener('change', () => {
+  });
+  $("#chartRepeater").addEventListener("change", () => {
     renderChart();
-});
-$('#repeaterSearch').addEventListener('input',renderRepeaters);
-$('#statusFilter').addEventListener('change',renderRepeaters);
-$('#alertFilter').addEventListener('change',renderAlerts);
-$('#alertSeverity').addEventListener('change',renderAlerts);
-$('#maintenanceSearch').addEventListener('input',renderMaintenance);
-$('#topAlerts').addEventListener('click',()=>go('alerts'));
-$('#closeModal').addEventListener('click',closeModal);
-$('#modalBackdrop').addEventListener('click',e=>{if(e.target===$('#modalBackdrop'))closeModal();});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+  });
+  $("#repeaterSearch").addEventListener("input", renderRepeaters);
+  $("#statusFilter").addEventListener("change", renderRepeaters);
+  $("#alertFilter").addEventListener("change", renderAlerts);
+  $("#alertSeverity").addEventListener("change", renderAlerts);
+  $("#maintenanceSearch").addEventListener("input", renderMaintenance);
+  $("#topAlerts").addEventListener("click", () => go("alerts"));
+  $("#closeModal").addEventListener("click", closeModal);
+  $("#modalBackdrop").addEventListener("click", (e) => {
+    if (e.target === $("#modalBackdrop")) closeModal();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeModal();
+  });
 
-$('#mobileToggle').addEventListener('click',
-    ()=>{const m=$('#mobileNav');
-        m.style.display=m.style.display==='none'?'flex':'none';
-});
-$('#mobileNav').innerHTML = 
-$$('#sideNav [data-view]').map(b=>
-    `<button class = "nav-btn${b.dataset.view==='dashboard'?' active':''}" 
-    data-view = "${b.dataset.view}">${b.innerHTML}</button>`).join('');
-go(savedView);
+  $("#mobileToggle").addEventListener("click", () => {
+    const m = $("#mobileNav");
+    m.style.display = m.style.display === "none" ? "flex" : "none";
+  });
+  $("#mobileNav").innerHTML = $$("#sideNav [data-view]")
+    .map(
+      (b) =>
+        `<button class = "nav-btn${b.dataset.view === "dashboard" ? " active" : ""}" 
+    data-view = "${b.dataset.view}">${b.innerHTML}</button>`,
+    )
+    .join("");
+  go(savedView);
 
-async function requestApi(path, options={}){
+  async function requestApi(path, options = {}) {
     const response = await fetch(API_URL + path, options);
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Não foi possível concluir a operação.');
+    if (!response.ok)
+      throw new Error(data.error || "Não foi possível concluir a operação.");
     return data;
-}
+  }
 
-document.addEventListener('submit', async event => {
-    const form = event.target;
-    if (form.getAttribute('id') !== 'modalForm') return;
-    
-    // Impede o recarregamento padrão da página
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    
-    const fd = new FormData(form);
-    try {
+  document.addEventListener(
+    "submit",
+    async (event) => {
+      const form = event.target;
+      if (form.getAttribute("id") !== "modalForm") return;
+
+      // Impede o recarregamento padrão da página
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      const fd = new FormData(form);
+      try {
         // Verifica se é o formulário de manutenção
-        if (form.querySelector('#mDevice')) {
-            const maintenance = await requestApi('/maintenances', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    device: String(fd.get('device')),
-                    type: String(fd.get('type')),
-                    tech: String(fd.get('tech')).trim(),
-                    date: String(fd.get('date')),
-                    note: String(fd.get('note')).trim()
-                })
-            });
-            await loadDataFromApi();
-            closeModal();
-            showToast(maintenance.id + ' salva no banco.');
-        } 
+        if (form.querySelector("#mDevice")) {
+          const maintenance = await requestApi("/maintenances", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              device: String(fd.get("device")),
+              type: String(fd.get("type")),
+              tech: String(fd.get("tech")).trim(),
+              date: String(fd.get("date")),
+              note: String(fd.get("note")).trim(),
+            }),
+          });
+          await loadDataFromApi();
+          closeModal();
+          showToast(maintenance.id + " salva no banco.");
+        }
         // Se for o formulário de cadastro de repetidoras
-        else if (form.querySelector('#rId')) {
-            let id = String(fd.get('id')).trim().toUpperCase();
-            let temp = Number(fd.get('temp')), voltage = Number(fd.get('voltage'));
-            const repeater = {
+        else if (form.querySelector("#rId")) {
+          let id = String(fd.get("id")).trim().toUpperCase();
+          let temp = Number(fd.get("temp")),
+            voltage = Number(fd.get("voltage"));
+          const repeater = {
             id,
-            name: String(fd.get('name')).trim(),
-            location: String(fd.get('location')).trim(),
-            status: temp > 60 || voltage < 11 ? 'warn' : 'ok',
+            name: String(fd.get("name")).trim(),
+            location: String(fd.get("location")).trim(),
+            status: temp > 60 || voltage < 11 ? "warn" : "ok",
             temp,
             voltage,
             signal: 76,
-            updated: 'agora',
-            lat: fd.get('lat') === '' ? null : Number(fd.get('lat')),
-            lng: fd.get('lng') === '' ? null : Number(fd.get('lng'))
-            };
-            
-            const response = await fetch(`${API_URL}/repeaters`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(repeater)
-            });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || 'Não foi possível cadastrar a repetidora.');
-            
-            await loadDataFromApi();
-            closeModal();
-            showToast(`${result.id} cadastrada e salva no banco.`);
-        }
-    } catch (error) {
-        console.error(error);
-        showToast(error.message || 'Não foi possível concluir a operação.', 'error');
-    }
-}, true);
+            updated: "agora",
+            lat: fd.get("lat") === "" ? null : Number(fd.get("lat")),
+            lng: fd.get("lng") === "" ? null : Number(fd.get("lng")),
+          };
 
-document.addEventListener('click', async event=>{
-    const ackButton = event.target.closest('[data-ack]');
-    const acknowledgeAll = event.target.closest('#ackAll');
-    const simulationButton = event.target.closest('#simulateFault, #alertSimulate');
-    if (!ackButton && !acknowledgeAll && !simulationButton) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    try {
+          const response = await fetch(`${API_URL}/repeaters`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(repeater),
+          });
+          const result = await response.json();
+          if (!response.ok)
+            throw new Error(
+              result.error || "Não foi possível cadastrar a repetidora.",
+            );
+
+          await loadDataFromApi();
+          closeModal();
+          showToast(`${result.id} cadastrada e salva no banco.`);
+        }
+      } catch (error) {
+        console.error(error);
+        showToast(
+          error.message || "Não foi possível concluir a operação.",
+          "error",
+        );
+      }
+    },
+    true,
+  );
+
+  document.addEventListener(
+    "click",
+    async (event) => {
+      const ackButton = event.target.closest("[data-ack]");
+      const acknowledgeAll = event.target.closest("#ackAll");
+      const simulationButton = event.target.closest(
+        "#simulateFault, #alertSimulate",
+      );
+      if (!ackButton && !acknowledgeAll && !simulationButton) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      try {
         if (ackButton) {
-            await requestApi('/alerts/' + ackButton.dataset.ack + '/acknowledge', {method:'PATCH'});
-            await loadDataFromApi();
-            showToast('Alerta marcado como reconhecido.');
-            return;
+          await requestApi(
+            "/alerts/" + ackButton.dataset.ack + "/acknowledge",
+            { method: "PATCH" },
+          );
+          await loadDataFromApi();
+          showToast("Alerta marcado como reconhecido.");
+          return;
         }
         if (acknowledgeAll) {
-            const result = await requestApi('/alerts/acknowledge-all', {method:'POST'});
-            await loadDataFromApi();
-            showToast(result.updated ? result.updated + ' alerta(s) reconhecido(s).' : 'Não havia alertas pendentes.');
-            return;
+          const result = await requestApi("/alerts/acknowledge-all", {
+            method: "POST",
+          });
+          await loadDataFromApi();
+          showToast(
+            result.updated
+              ? result.updated + " alerta(s) reconhecido(s)."
+              : "Não havia alertas pendentes.",
+          );
+          return;
         }
-        const repeater = repeaters.find(item=>item.status !== 'bad') || repeaters[0];
-        if (!repeater) throw new Error('Cadastre uma repetidora antes de simular falhas.');
-        const variants = [{title:'Temperatura crítica simulada',description:'Alerta criado para demonstração.',severity:'critical'},{title:'Perda de comunicação simulada',description:'Alerta criado para demonstração.',severity:'critical'},{title:'Tensão baixa simulada',description:'Alerta criado para demonstração.',severity:'warning'}];
-        const alert = variants[Math.floor(Math.random()*variants.length)];
-        await requestApi('/alerts', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...alert,device:repeater.id})});
+        const repeater =
+          repeaters.find((item) => item.status !== "bad") || repeaters[0];
+        if (!repeater)
+          throw new Error("Cadastre uma repetidora antes de simular falhas.");
+        const variants = [
+          {
+            title: "Temperatura crítica simulada",
+            description: "Alerta criado para demonstração.",
+            severity: "critical",
+          },
+          {
+            title: "Perda de comunicação simulada",
+            description: "Alerta criado para demonstração.",
+            severity: "critical",
+          },
+          {
+            title: "Tensão baixa simulada",
+            description: "Alerta criado para demonstração.",
+            severity: "warning",
+          },
+        ];
+        const alert = variants[Math.floor(Math.random() * variants.length)];
+        await requestApi("/alerts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...alert, device: repeater.id }),
+        });
         await loadDataFromApi();
-        showToast('Alerta de teste criado para ' + repeater.id + '.');
-    } catch (error) {
+        showToast("Alerta de teste criado para " + repeater.id + ".");
+      } catch (error) {
         console.error(error);
-        showToast(error.message || 'Não foi possível concluir a operação.','error');
-    }
-}, true);
-loadDataFromApi();
-setInterval(() => {
+        showToast(
+          error.message || "Não foi possível concluir a operação.",
+          "error",
+        );
+      }
+    },
+    true,
+  );
+  // --- BOTÃO DE LOGOUT ---
+  const logoutBtn = $("#logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+      // Remove a permissão de acesso
+      localStorage.removeItem("traceRepToken");
+      // Redireciona de volta para a tela de login
+      window.location.href = "login.html";
+    });
+  }
+  loadDataFromApi();
+  setInterval(() => {
     loadDataFromApi(true);
-}, 5000);
+  }, 5000);
 })();

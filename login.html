@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>Login · TRACE-REP LITE</title>
+    <style>
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        background-color: var(--canvas);
+      }
+      .login-container {
+        width: 100%;
+        max-width: 400px;
+        padding: 20px;
+      }
+      .login-card {
+        background: var(--surface);
+        padding: 30px;
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border);
+      }
+      .login-brand {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 25px;
+        text-align: center;
+      }
+      .login-brand .brand-mark {
+        margin-bottom: 12px;
+        width: 48px;
+        height: 48px;
+      }
+      .login-title {
+        font-size: 20px;
+        font-weight: 750;
+        color: var(--text);
+        letter-spacing: -0.02em;
+      }
+      .login-subtitle {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 5px;
+      }
+      .login-form .field {
+        margin-bottom: 16px;
+      }
+      .login-form .btn-primary {
+        width: 100%;
+        margin-top: 10px;
+        padding: 12px;
+      }
+      .login-error {
+        color: var(--red);
+        font-size: 11px;
+        background: var(--red-soft);
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-container">
+      <div class="login-card">
+        <div class="login-brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M12 3v18M5 7l7-4 7 4M5 17l7 4 7-4M7 12h10"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <circle
+                cx="12"
+                cy="12"
+                r="3"
+                stroke="currentColor"
+                stroke-width="1.7"
+              />
+            </svg>
+          </div>
+          <div class="login-title">TRACE-REP LITE</div>
+          <div class="login-subtitle">Acesse o painel de monitoramento</div>
+        </div>
+
+        <div class="login-error" id="loginError" role="alert">
+          Usuário ou senha inválidos. Tente novamente.
+        </div>
+
+        <form class="login-form" id="loginForm">
+          <div class="field">
+            <label for="username">Usuário</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              autocomplete="username"
+              required
+              placeholder="admin@trace-rep.com"
+            />
+          </div>
+          <div class="field">
+            <label for="password">Senha</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              autocomplete="current-password"
+              required
+              placeholder="••••••••"
+            />
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="loginBtn">
+            Entrar no sistema
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const user = document.getElementById("username").value;
+          const pass = document.getElementById("password").value;
+          const errorBox = document.getElementById("loginError");
+          const btn = document.getElementById("loginBtn");
+
+          btn.textContent = "Verificando...";
+          btn.disabled = true;
+          errorBox.style.display = "none";
+
+          try {
+            const response = await fetch("/api/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ username: user, password: pass }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+              // Salva o token que o client.js espera
+              localStorage.setItem("traceRepToken", data.token);
+              window.location.href = "index.html";
+            } else {
+              errorBox.textContent =
+                data.error || "Usuário ou senha inválidos.";
+              errorBox.style.display = "block";
+              document.getElementById("password").value = "";
+              btn.textContent = "Entrar no sistema";
+              btn.disabled = false;
+            }
+          } catch (err) {
+            console.error(err);
+            errorBox.textContent = "Não foi possível conectar ao servidor.";
+            errorBox.style.display = "block";
+            btn.textContent = "Entrar no sistema";
+            btn.disabled = false;
+          }
+        });
+    </script>
+  </body>
+</html>

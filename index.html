@@ -1,46 +1,75 @@
 <!doctype html>
 <html lang="pt-BR">
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="styles.css">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="styles.css" />
     <title>TRACE-REP LITE</title>
   </head>
   <body>
     <div id="app">
       <div class="shell">
-        
         <!-- Painel lateral -->
         <aside class="sidebar" aria-label="Navegação principal">
           <div class="brand">
-
             <!-- Desenho da logo através de svg -->
             <div class="brand-mark" aria-hidden="true">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <path d="M12 3v18M5 7l7-4 7 4M5 17l7 4 7-4M7 12h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/>
+                <path
+                  d="M12 3v18M5 7l7-4 7 4M5 17l7 4 7-4M7 12h10"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="3"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                />
               </svg>
             </div>
             <div>
-              <div class="brand-name">TRACE-REP</div><div class="brand-caption">MONITORAMENTO LITE</div>
+              <div class="brand-name">TRACE-REP</div>
+              <div class="brand-caption">MONITORAMENTO LITE</div>
             </div>
           </div>
-          
+
           <!-- Definição dos botões que redirecionam para diferentes páginas -->
           <div>
-            <div class="nav-label">Workspace</div><nav class="nav" id="sideNav">
-            <button class="nav-btn active" data-view="dashboard"><span class="nav-icon">⌂</span>Visão geral</button>
-            <button class="nav-btn" data-view="repeaters"><span class="nav-icon">▤</span>Repetidoras</button>
-            
-            <!-- Tem que reescrever o botão alerts dinâmicamente dps de estabelecer o banco de dados -->
-            <button class="nav-btn" data-view="alerts"><span class="nav-icon">♧</span>Central de alertas<span class="nav-count" id="navAlertCount">2</span></button>
-            <button class="nav-btn" data-view="maintenance"><span class="nav-icon">⌁</span>Manutenções</button>
-            <button class="nav-btn" data-view="reports"><span class="nav-icon">▥</span>Relatórios</button>
-          </nav></div>
+            <div class="nav-label">Workspace</div>
+            <nav class="nav" id="sideNav">
+              <button class="nav-btn active" data-view="dashboard">
+                <span class="nav-icon">⌂</span>Visão geral
+              </button>
+              <button class="nav-btn" data-view="repeaters">
+                <span class="nav-icon">▤</span>Repetidoras
+              </button>
+
+              <!-- Tem que reescrever o botão alerts dinâmicamente dps de estabelecer o banco de dados -->
+              <button class="nav-btn" data-view="alerts">
+                <span class="nav-icon">♧</span>Central de alertas<span
+                  class="nav-count"
+                  id="navAlertCount"
+                  >2</span
+                >
+              </button>
+              <button class="nav-btn" data-view="maintenance">
+                <span class="nav-icon">⌁</span>Manutenções
+              </button>
+              <button class="nav-btn" data-view="reports">
+                <span class="nav-icon">▥</span>Relatórios
+              </button>
+            </nav>
+          </div>
           <div>
             <div class="nav-label">Projeto</div>
             <nav class="nav">
-              <button class="nav-btn" data-view="requirements"><span class="nav-icon">◈</span>Stack & requisitos</button>
+              <button class="nav-btn" data-view="requirements">
+                <span class="nav-icon">◈</span>Stack & requisitos
+              </button>
             </nav>
           </div>
 
@@ -51,14 +80,17 @@
                 <span class="pulse-dot"></span>
                 Ambiente de demonstração
               </div>
-              <div class="connection-note">API e banco de dados conectados. Telemetria real das repetidoras ainda não integrada.</div>
+              <div class="connection-note">
+                API e banco de dados conectados. Telemetria real das repetidoras
+                ainda não integrada.
+              </div>
             </div>
             <div class="user-mini">
               <div class="avatar">PI</div>
-            <div>
-              <div class="user-name">Grupo 8</div>
-              <div class="user-role">Projeto Integrador</div>
-            </div>
+              <div>
+                <div class="user-name">Grupo 8</div>
+                <div class="user-role">Projeto Integrador</div>
+              </div>
             </div>
           </div>
         </aside>
@@ -66,10 +98,15 @@
         <!-- Parte principal do site; onde são exibidas as informações -->
         <main class="main">
           <header class="topbar">
-
             <!-- Crumble button; não aparece, precisa consertar -->
             <div class="crumb">
-              <button class="icon-button mobile-menu" id="mobileToggle" aria-label="Alternar navegação">☰</button>
+              <button
+                class="icon-button mobile-menu"
+                id="mobileToggle"
+                aria-label="Alternar navegação"
+              >
+                ☰
+              </button>
               <span>TRACE-REP LITE</span>
               <span aria-hidden="true">/</span>
               <strong id="crumbTitle">Visão geral</strong>
@@ -83,45 +120,70 @@
               </div>
 
               <!-- Me parece inútil ter um botão que redireciona pra central de alertas aqui se já tem um no painel lateral -->
-                <button class="icon-button" id="topAlerts" aria-label="Ir para alertas" title="Central de alertas">
-                  ♧
-                  
-                  <!-- Se o botão for removido, tbm será possível remover este estilo do css -->
-                  <span class="notif-dot"></span>
-                </button>
-                
-                <!-- Seria interessante transformar isso em uma área de usuário, sla algo simples
+              <button
+                class="icon-button"
+                id="topAlerts"
+                aria-label="Ir para alertas"
+                title="Central de alertas"
+              >
+                ♧
+
+                <!-- Se o botão for removido, tbm será possível remover este estilo do css -->
+                <span class="notif-dot"></span>
+              </button>
+              <!-- BOTÃO DE LOGOUT ADICIONADO AQUI -->
+              <button
+                class="icon-button"
+                id="logoutBtn"
+                aria-label="Sair do sistema"
+                title="Sair"
+              >
+                ⏻
+              </button>
+
+              <!-- Seria interessante transformar isso em uma área de usuário, sla algo simples
                 tipo o nome e um botão de deslogar -->
-                <div class="avatar" aria-label="Equipe do Projeto Integrador">PI</div>
+              <div class="avatar" aria-label="Equipe do Projeto Integrador">
+                PI
               </div>
+            </div>
           </header>
 
           <!-- Possível div desnecessária -->
-          <div class="mobile-nav" id="mobileNav" style="display:none" aria-label="Navegação móvel"></div>
-
+          <div
+            class="mobile-nav"
+            id="mobileNav"
+            style="display: none"
+            aria-label="Navegação móvel"
+          ></div>
 
           <div class="content">
-            
             <!-- Página de Visão Geral -->
             <section class="view active" id="view-dashboard">
               <div class="page-heading">
                 <div>
                   <div class="eyebrow">Centro de operações / São Paulo</div>
                   <h1>Visão geral</h1>
-                  <p class="page-description">Acompanhe o estado das repetidoras, as medições recentes e os eventos que precisam de atenção.</p>
+                  <p class="page-description">
+                    Acompanhe o estado das repetidoras, as medições recentes e
+                    os eventos que precisam de atenção.
+                  </p>
                 </div>
                 <div class="heading-actions">
-                  <button class="btn" id="dashboardExport">↓ Exportar dados</button>
-                  <button class="btn btn-primary" id="simulateFault">＋ Simular falha</button>
+                  <button class="btn" id="dashboardExport">
+                    ↓ Exportar dados
+                  </button>
+                  <button class="btn btn-primary" id="simulateFault">
+                    ＋ Simular falha
+                  </button>
                 </div>
               </div>
 
               <!-- Possível div desnecessária -->
               <div class="grid stats" id="statsGrid"></div>
-              
+
               <!-- As quatro seções inferiores da página são representadas aqui cada uma por um artigo -->
               <div class="grid middle-grid">
-                
                 <!--  -->
                 <article class="card">
                   <div class="card-header">
@@ -132,15 +194,27 @@
                       </div>
                     </div>
 
-                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-
-                      <select class="select-small" id="chartRepeater"
-                              aria-label="Selecionar repetidora">
+                    <div
+                      style="
+                        display: flex;
+                        gap: 8px;
+                        align-items: center;
+                        flex-wrap: wrap;
+                      "
+                    >
+                      <select
+                        class="select-small"
+                        id="chartRepeater"
+                        aria-label="Selecionar repetidora"
+                      >
                         <option value="all">Todas as repetidoras</option>
                       </select>
 
-                      <select class="select-small" id="chartRange"
-                              aria-label="Período do gráfico">
+                      <select
+                        class="select-small"
+                        id="chartRange"
+                        aria-label="Período do gráfico"
+                      >
                         <option value="60">Último 1 minuto</option>
                         <option value="300">Últimos 5 minutos</option>
                         <option value="900">Últimos 15 minutos</option>
@@ -150,11 +224,16 @@
                         <option value="43200" selected>Últimas 12 horas</option>
                         <option value="86400">Últimas 24 horas</option>
                       </select>
-
                     </div>
                   </div>
                   <div class="chart-wrap">
-                    <svg class="chart-svg" id="telemetryChart" viewBox="0 0 620 235" role="img" aria-label="Gráfico de telemetria de exemplo"></svg>
+                    <svg
+                      class="chart-svg"
+                      id="telemetryChart"
+                      viewBox="0 0 620 235"
+                      role="img"
+                      aria-label="Gráfico de telemetria de exemplo"
+                    ></svg>
                   </div>
                   <div class="legend">
                     <span class="legend-key">
@@ -171,24 +250,28 @@
                   <div class="card-header">
                     <div>
                       <div class="card-title">Saúde do sistema</div>
-                      <div class="card-subtitle">Resumo atualizado com os dados de demonstração</div>
+                      <div class="card-subtitle">
+                        Resumo atualizado com os dados de demonstração
+                      </div>
                     </div>
                     <span class="status status-ok">Ativo</span>
                   </div>
                   <div class="health-summary" id="healthSummary"></div>
                 </article>
-
               </div>
               <div class="grid lower-grid">
-
                 <!--  -->
                 <article class="card table-card">
                   <div class="table-heading">
                     <div>
                       <div class="card-title">Repetidoras monitoradas</div>
-                      <div class="card-subtitle">Equipamentos cadastrados no protótipo</div>
+                      <div class="card-subtitle">
+                        Equipamentos cadastrados no protótipo
+                      </div>
                     </div>
-                    <button class="view-all" data-goto="repeaters">Ver todas →</button>
+                    <button class="view-all" data-goto="repeaters">
+                      Ver todas →
+                    </button>
                   </div>
                   <div class="table-scroll">
                     <table>
@@ -211,42 +294,63 @@
                   <div class="table-heading">
                     <div>
                       <div class="card-title">Eventos recentes</div>
-                      <div class="card-subtitle">Alertas e mudanças de estado</div>
+                      <div class="card-subtitle">
+                        Alertas e mudanças de estado
+                      </div>
                     </div>
-                    <button class="view-all" data-goto="alerts">Ver central →</button>
+                    <button class="view-all" data-goto="alerts">
+                      Ver central →
+                    </button>
                   </div>
                   <div class="alert-list" id="recentAlerts"></div>
                 </article>
-
               </div>
             </section>
-            
+
             <!-- Página de Repetidoras -->
             <section class="view" id="view-repeaters">
               <div class="page-heading">
                 <div>
                   <div class="eyebrow">Inventário</div>
                   <h1>Repetidoras</h1>
-                  <p class="page-description">Cadastre os equipamentos e acompanhe a última leitura registrada.</p>
+                  <p class="page-description">
+                    Cadastre os equipamentos e acompanhe a última leitura
+                    registrada.
+                  </p>
                 </div>
                 <div class="heading-actions">
-                  <button class="btn" id="repeatersExport">↓ Exportar CSV</button>
-                  <button class="btn btn-primary" id="newRepeater">＋ Nova repetidora</button>
+                  <button class="btn" id="repeatersExport">
+                    ↓ Exportar CSV
+                  </button>
+                  <button class="btn btn-primary" id="newRepeater">
+                    ＋ Nova repetidora
+                  </button>
                 </div>
               </div>
-              
+
               <div class="toolbar">
                 <div class="search-box">
                   <span class="search-icon">⌕</span>
-                  <input id="repeaterSearch" type="search" placeholder="Buscar por ID ou localização…" aria-label="Buscar repetidoras">
+                  <input
+                    id="repeaterSearch"
+                    type="search"
+                    placeholder="Buscar por ID ou localização…"
+                    aria-label="Buscar repetidoras"
+                  />
                 </div>
-                <select id="statusFilter" class="filter-select" aria-label="Filtrar por status">
+                <select
+                  id="statusFilter"
+                  class="filter-select"
+                  aria-label="Filtrar por status"
+                >
                   <option value="all">Todos os status</option>
                   <option value="ok">Normal</option>
                   <option value="warn">Atenção</option>
                   <option value="bad">Offline</option>
                 </select>
-                <span class="demo-pill"><span></span>Dados de demonstração</span>
+                <span class="demo-pill"
+                  ><span></span>Dados de demonstração</span
+                >
               </div>
               <article class="card table-card">
                 <div class="table-scroll">
@@ -265,10 +369,18 @@
                     <tbody id="allRepeaters"></tbody>
                   </table>
                 </div>
-                <div id="repeaterEmpty" class="empty-state" style="display:none">Nenhuma repetidora encontrada para essa busca.</div>
+                <div
+                  id="repeaterEmpty"
+                  class="empty-state"
+                  style="display: none"
+                >
+                  Nenhuma repetidora encontrada para essa busca.
+                </div>
               </article>
               <div class="notice">
-                ℹ️ <strong>Sobre os sinais:</strong> o indicador de saída é uma simulação do protótipo; não representa medição real de radiofrequência ou VSWR.
+                ℹ️ <strong>Sobre os sinais:</strong> o indicador de saída é uma
+                simulação do protótipo; não representa medição real de
+                radiofrequência ou VSWR.
               </div>
             </section>
 
@@ -278,26 +390,41 @@
                 <div>
                   <div class="eyebrow">Eventos e ocorrências</div>
                   <h1>Central de alertas</h1>
-                  <p class="page-description">Visualize anomalias detectadas e marque ocorrências como reconhecidas.</p>
+                  <p class="page-description">
+                    Visualize anomalias detectadas e marque ocorrências como
+                    reconhecidas.
+                  </p>
                 </div>
                 <div class="heading-actions">
                   <button class="btn" id="ackAll">✓ Reconhecer todos</button>
-                  <button class="btn btn-primary" id="alertSimulate">＋ Gerar alerta de teste</button>
+                  <button class="btn btn-primary" id="alertSimulate">
+                    ＋ Gerar alerta de teste
+                  </button>
                 </div>
               </div>
               <div class="alert-banner">
-                <span style="font-size:16px">ⓘ</span>
+                <span style="font-size: 16px">ⓘ</span>
                 <div>
-                  <strong>Modo de demonstração</strong>Os alertas desta tela são gerados por dados fictícios e simulações manuais. Nenhuma repetidora real está sendo monitorada.
+                  <strong>Modo de demonstração</strong>Os alertas desta tela são
+                  gerados por dados fictícios e simulações manuais. Nenhuma
+                  repetidora real está sendo monitorada.
                 </div>
               </div>
               <div class="toolbar">
-                <select class="filter-select" id="alertFilter" aria-label="Filtrar alertas">
+                <select
+                  class="filter-select"
+                  id="alertFilter"
+                  aria-label="Filtrar alertas"
+                >
                   <option value="all">Todos os alertas</option>
                   <option value="active">Não reconhecidos</option>
                   <option value="ack">Reconhecidos</option>
                 </select>
-                <select class="filter-select" id="alertSeverity" aria-label="Filtrar severidade">
+                <select
+                  class="filter-select"
+                  id="alertSeverity"
+                  aria-label="Filtrar severidade"
+                >
                   <option value="all">Todas as severidades</option>
                   <option value="critical">Crítico</option>
                   <option value="warning">Atenção</option>
@@ -320,7 +447,9 @@
                     <tbody id="alertsTable"></tbody>
                   </table>
                 </div>
-                <div id="alertsEmpty" class="empty-state" style="display:none">Nenhum alerta corresponde aos filtros.</div>
+                <div id="alertsEmpty" class="empty-state" style="display: none">
+                  Nenhum alerta corresponde aos filtros.
+                </div>
               </article>
             </section>
 
@@ -330,11 +459,18 @@
                 <div>
                   <div class="eyebrow">Histórico de campo</div>
                   <h1>Manutenções</h1>
-                  <p class="page-description">Registre inspeções, reparos e intervenções vinculadas a cada equipamento.</p>
+                  <p class="page-description">
+                    Registre inspeções, reparos e intervenções vinculadas a cada
+                    equipamento.
+                  </p>
                 </div>
                 <div class="heading-actions">
-                  <button class="btn" id="maintenanceExport">↓ Exportar CSV</button>
-                  <button class="btn btn-primary" id="newMaintenance">＋ Registrar manutenção</button>
+                  <button class="btn" id="maintenanceExport">
+                    ↓ Exportar CSV
+                  </button>
+                  <button class="btn btn-primary" id="newMaintenance">
+                    ＋ Registrar manutenção
+                  </button>
                 </div>
               </div>
 
@@ -344,11 +480,18 @@
                 <div class="table-heading">
                   <div>
                     <div class="card-title">Histórico de serviços</div>
-                    <div class="card-subtitle">Histórico de manutenções armazenado no banco de dados</div>
+                    <div class="card-subtitle">
+                      Histórico de manutenções armazenado no banco de dados
+                    </div>
                   </div>
-                  <div class="search-box" style="max-width:240px">
+                  <div class="search-box" style="max-width: 240px">
                     <span class="search-icon">⌕</span>
-                    <input id="maintenanceSearch" type="search" placeholder="Buscar técnico ou equipamento…" aria-label="Buscar manutenções">
+                    <input
+                      id="maintenanceSearch"
+                      type="search"
+                      placeholder="Buscar técnico ou equipamento…"
+                      aria-label="Buscar manutenções"
+                    />
                   </div>
                 </div>
                 <div class="table-scroll">
@@ -366,9 +509,18 @@
                     <tbody id="maintenanceTable"></tbody>
                   </table>
                 </div>
-                <div id="maintenanceEmpty" class="empty-state" style="display:none">Nenhuma manutenção encontrada.</div>
+                <div
+                  id="maintenanceEmpty"
+                  class="empty-state"
+                  style="display: none"
+                >
+                  Nenhuma manutenção encontrada.
+                </div>
               </article>
-              <div class="notice">Os registros de manutenção são armazenados no banco de dados e permanecem disponíveis após atualizar a página.</div>
+              <div class="notice">
+                Os registros de manutenção são armazenados no banco de dados e
+                permanecem disponíveis após atualizar a página.
+              </div>
             </section>
 
             <!-- Página de Relatórios -->
@@ -377,31 +529,42 @@
                 <div>
                   <div class="eyebrow">Indicadores</div>
                   <h1>Relatórios</h1>
-                  <p class="page-description">Resumo visual de disponibilidade, ocorrências e atividades do protótipo.</p>
+                  <p class="page-description">
+                    Resumo visual de disponibilidade, ocorrências e atividades
+                    do protótipo.
+                  </p>
                 </div>
                 <div class="heading-actions">
-                  <button class="btn btn-primary" id="reportExport">↓ Baixar relatório CSV</button>
+                  <button class="btn btn-primary" id="reportExport">
+                    ↓ Baixar relatório CSV
+                  </button>
                 </div>
               </div>
               <div class="grid report-grid" id="reportStats"></div>
               <div class="grid middle-grid">
                 <article class="card report-chart">
                   <div class="card-title">Alertas por categoria</div>
-                  <div class="card-subtitle">Distribuição dos eventos de demonstração</div>
+                  <div class="card-subtitle">
+                    Distribuição dos eventos de demonstração
+                  </div>
                   <div class="report-bars" id="alertBars"></div>
                 </article>
                 <article class="card">
                   <div class="card-header">
                     <div>
                       <div class="card-title">Indicadores de operação</div>
-                      <div class="card-subtitle">Baseados no estado atual do protótipo</div>
+                      <div class="card-subtitle">
+                        Baseados no estado atual do protótipo
+                      </div>
                     </div>
                   </div>
                   <div class="health-summary" id="reportHealth"></div>
                 </article>
               </div>
               <div class="notice">
-                Os relatórios são calculados localmente a partir dos dados ilustrativos desta página. Não representam métricas históricas reais.
+                Os relatórios são calculados localmente a partir dos dados
+                ilustrativos desta página. Não representam métricas históricas
+                reais.
               </div>
             </section>
 
@@ -411,13 +574,18 @@
                 <div>
                   <div class="eyebrow">Arquitetura do projeto</div>
                   <h1>Stack & requisitos</h1>
-                  <p class="page-description">Visão planejada das tecnologias que vão compor a versão completa do PI.</p>
+                  <p class="page-description">
+                    Visão planejada das tecnologias que vão compor a versão
+                    completa do PI.
+                  </p>
                 </div>
                 <div class="heading-actions">
-                  <span class="demo-pill"><span></span>Planejamento técnico</span>
+                  <span class="demo-pill"
+                    ><span></span>Planejamento técnico</span
+                  >
                 </div>
               </div>
-              <div class="grid stack-grid" style="margin-bottom:17px">
+              <div class="grid stack-grid" style="margin-bottom: 17px">
                 <article class="card tech-card">
                   <div class="tech-top">
                     <div class="tech-icon">⚛</div>
@@ -426,7 +594,11 @@
                       <div class="tech-type">Interface web · Implementado</div>
                     </div>
                   </div>
-                  <p>Interface web desenvolvida com HTML, CSS e JavaScript, incluindo navegação, formulários, tabelas e visualização de dados.</p>
+                  <p>
+                    Interface web desenvolvida com HTML, CSS e JavaScript,
+                    incluindo navegação, formulários, tabelas e visualização de
+                    dados.
+                  </p>
                 </article>
                 <article class="card tech-card">
                   <div class="tech-top">
@@ -436,7 +608,11 @@
                       <div class="tech-type">Banco de dados · Implementado</div>
                     </div>
                   </div>
-                  <p>Banco de dados PostgreSQL hospedado no Supabase, integrado à API para armazenar repetidoras, alertas e registros de manutenção.</p>
+                  <p>
+                    Banco de dados PostgreSQL hospedado no Supabase, integrado à
+                    API para armazenar repetidoras, alertas e registros de
+                    manutenção.
+                  </p>
                 </article>
                 <article class="card tech-card">
                   <div class="tech-top">
@@ -444,105 +620,153 @@
                     <div>
                       <div class="tech-name">Vercel + Supabase</div>
                       <div class="tech-type">Hospedagem · Implementado</div>
-                    </div></div><p>Aplicação publicada na Vercel, com backend integrado ao banco de dados PostgreSQL hospedado no Supabase.</p>
-                  </article>
+                    </div>
+                  </div>
+                  <p>
+                    Aplicação publicada na Vercel, com backend integrado ao
+                    banco de dados PostgreSQL hospedado no Supabase.
+                  </p>
+                </article>
                 <article class="card tech-card">
                   <div class="tech-top">
                     <div class="tech-icon">⌘</div>
                     <div>
                       <div class="tech-name">API REST + MQTT</div>
-                      <div class="tech-type">Comunicação · API implementada / MQTT futuro</div>
+                      <div class="tech-type">
+                        Comunicação · API implementada / MQTT futuro
+                      </div>
                     </div>
                   </div>
-                  <p>API REST desenvolvida com Node.js e Express para consultar e cadastrar repetidoras, alertas e manutenções. A integração MQTT será realizada em uma etapa futura para receber telemetria.</p>
+                  <p>
+                    API REST desenvolvida com Node.js e Express para consultar e
+                    cadastrar repetidoras, alertas e manutenções. A integração
+                    MQTT será realizada em uma etapa futura para receber
+                    telemetria.
+                  </p>
                 </article>
                 <article class="card tech-card">
                   <div class="tech-top">
                     <div class="tech-icon">⑂</div>
                     <div>
                       <div class="tech-name">Git + GitHub</div>
-                      <div class="tech-type">Controle de versão · Implementado</div>
+                      <div class="tech-type">
+                        Controle de versão · Implementado
+                      </div>
                     </div>
                   </div>
-                  <p>Código-fonte versionado com Git e hospedado no GitHub, com histórico de alterações e integração ao processo de publicação na Vercel.</p>
+                  <p>
+                    Código-fonte versionado com Git e hospedado no GitHub, com
+                    histórico de alterações e integração ao processo de
+                    publicação na Vercel.
+                  </p>
                 </article>
                 <article class="card tech-card">
                   <div class="tech-top">
                     <div class="tech-icon">✓</div>
                     <div>
-                      <div class="tech-name">Vitest + Testing Library + axe</div>
+                      <div class="tech-name">
+                        Vitest + Testing Library + axe
+                      </div>
                       <div class="tech-type">Testes · Planejado</div>
                     </div>
                   </div>
-                  <p>Ferramentas previstas para testes automatizados, validação de componentes e verificação de acessibilidade da aplicação.</p>
+                  <p>
+                    Ferramentas previstas para testes automatizados, validação
+                    de componentes e verificação de acessibilidade da aplicação.
+                  </p>
                 </article>
               </div>
-              <article class="card" style="padding:19px;margin-bottom:16px">
-                <div class="card-title" style="margin-bottom:5px">Requisitos do PI e como demonstrar</div>
-                <div class="card-subtitle" style="margin-bottom:15px">
-                  A lista abaixo é o plano de atendimento, não uma declaração de que as integrações já estão concluídas.
+              <article class="card" style="padding: 19px; margin-bottom: 16px">
+                <div class="card-title" style="margin-bottom: 5px">
+                  Requisitos do PI e como demonstrar
+                </div>
+                <div class="card-subtitle" style="margin-bottom: 15px">
+                  A lista abaixo é o plano de atendimento, não uma declaração de
+                  que as integrações já estão concluídas.
                 </div>
                 <div class="requirement-list">
-                <div class="requirement">
-                  <div class="req-check">✓</div>
-                  <div>
-                    <div class="req-title">Framework web</div>
-                    <div class="req-desc">Interface planejada em React com componentes reutilizáveis.</div>
+                  <div class="requirement">
+                    <div class="req-check">✓</div>
+                    <div>
+                      <div class="req-title">Framework web</div>
+                      <div class="req-desc">
+                        Interface planejada em React com componentes
+                        reutilizáveis.
+                      </div>
+                    </div>
+                  </div>
+                  <div class="requirement">
+                    <div class="req-check">✓</div>
+                    <div>
+                      <div class="req-title">JavaScript</div>
+                      <div class="req-desc">
+                        Lógica de interface, validação e chamadas à API.
+                      </div>
+                    </div>
+                  </div>
+                  <div class="requirement">
+                    <div class="req-check">✓</div>
+                    <div>
+                      <div class="req-title">Banco de dados</div>
+                      <div class="req-desc">
+                        PostgreSQL com tabelas relacionadas e persistência real.
+                      </div>
+                    </div>
+                  </div>
+                  <div class="requirement">
+                    <div class="req-check">✓</div>
+                    <div>
+                      <div class="req-title">Nuvem</div>
+                      <div class="req-desc">
+                        Aplicação e serviços publicados, com acesso verificado.
+                      </div>
+                    </div>
+                  </div>
+                  <div class="requirement">
+                    <div class="req-check">✓</div>
+                    <div>
+                      <div class="req-title">Uso de API</div>
+                      <div class="req-desc">
+                        Endpoints ou API gerenciada para operações do sistema.
+                      </div>
+                    </div>
+                  </div>
+                  <div class="requirement">
+                    <div class="req-check">✓</div>
+                    <div>
+                      <div class="req-title">Acessibilidade</div>
+                      <div class="req-desc">
+                        Teclado, rótulos, contraste, foco visível e leitores de
+                        tela.
+                      </div>
+                    </div>
+                  </div>
+                  <div class="requirement">
+                    <div class="req-check">✓</div>
+                    <div>
+                      <div class="req-title">Controle de versão</div>
+                      <div class="req-desc">
+                        Repositório Git com commits registrados pela equipe.
+                      </div>
+                    </div>
+                  </div>
+                  <div class="requirement">
+                    <div class="req-check">✓</div>
+                    <div>
+                      <div class="req-title">Testes</div>
+                      <div class="req-desc">
+                        Testes automatizados e evidências de testes funcionais.
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div class="requirement">
-                  <div class="req-check">✓</div>
-                  <div>
-                    <div class="req-title">JavaScript</div>
-                    <div class="req-desc">Lógica de interface, validação e chamadas à API.</div>
-                  </div>
-                </div>
-                <div class="requirement">
-                  <div class="req-check">✓</div>
-                  <div>
-                    <div class="req-title">Banco de dados</div>
-                    <div class="req-desc">PostgreSQL com tabelas relacionadas e persistência real.</div>
-                  </div>
-                </div>
-                <div class="requirement">
-                  <div class="req-check">✓</div>
-                  <div>
-                    <div class="req-title">Nuvem</div>
-                    <div class="req-desc">Aplicação e serviços publicados, com acesso verificado.</div>
-                  </div>
-                </div>
-                <div class="requirement">
-                  <div class="req-check">✓</div>
-                  <div>
-                    <div class="req-title">Uso de API</div>
-                    <div class="req-desc">Endpoints ou API gerenciada para operações do sistema.</div>
-                  </div>
-                </div>
-                <div class="requirement">
-                  <div class="req-check">✓</div>
-                  <div>
-                    <div class="req-title">Acessibilidade</div>
-                    <div class="req-desc">Teclado, rótulos, contraste, foco visível e leitores de tela.</div>
-                  </div>
-                </div>
-                <div class="requirement">
-                  <div class="req-check">✓</div>
-                  <div>
-                    <div class="req-title">Controle de versão</div>
-                    <div class="req-desc">Repositório Git com commits registrados pela equipe.</div>
-                  </div>
-                </div>
-                <div class="requirement">
-                  <div class="req-check">✓</div>
-                  <div>
-                    <div class="req-title">Testes</div>
-                    <div class="req-desc">Testes automatizados e evidências de testes funcionais.</div>
-                  </div>
-                </div>
-              </div>
-            </article>
+              </article>
               <div class="notice">
-                <strong>Próxima fase técnica:</strong> integrar a telemetria das repetidoras por meio de MQTT, conectar os dispositivos ESP32 e implementar testes automatizados e validações de acessibilidade. Atualmente, o sistema utiliza dados cadastrados e simulados para demonstrar seu funcionamento.
+                <strong>Próxima fase técnica:</strong> integrar a telemetria das
+                repetidoras por meio de MQTT, conectar os dispositivos ESP32 e
+                implementar testes automatizados e validações de acessibilidade.
+                Atualmente, o sistema utiliza dados cadastrados e simulados para
+                demonstrar seu funcionamento.
               </div>
             </section>
 
@@ -557,20 +781,32 @@
 
     <!-- Esse pedaço parece não ter função alguma em qualquer página. 
     Ao meu ver, seria uma tela de criação de registro [do que eu não sei] -->
-    <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div
+      class="modal-backdrop"
+      id="modalBackdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modalTitle"
+    >
       <div class="modal">
         <div class="modal-header">
           <div>
             <h2 id="modalTitle">Novo registro</h2>
             <p id="modalSubtitle">Preencha os campos abaixo.</p>
           </div>
-          <button class="close-btn" id="closeModal" aria-label="Fechar janela">×</button>
+          <button class="close-btn" id="closeModal" aria-label="Fechar janela">
+            ×
+          </button>
         </div>
         <div class="modal-body" id="modalBody"></div>
       </div>
     </div>
-    <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
-
+    <div
+      class="toast-region"
+      id="toastRegion"
+      aria-live="polite"
+      aria-atomic="true"
+    ></div>
 
     <!-- JS -->
     <script src="client.js"></script>
