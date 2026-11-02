@@ -169,9 +169,7 @@ app.get('/api/repeaters', asyncHandler(async (req, res) => {
 
   if (req.query.status && req.query.status !== 'all') {
     if (!validStatus(req.query.status)) {
-      return res.status(400).json({
-        error: 'Filtro de status inválido.'
-      });
+      return res.status(400).json({ error: 'Filtro de status inválido.' });
     }
 
     sql += ' WHERE status = $1';
@@ -181,7 +179,30 @@ app.get('/api/repeaters', asyncHandler(async (req, res) => {
   sql += ' ORDER BY id';
 
   const result = await pool.query(sql, params);
-  res.json(result.rows);
+
+  const repeaters = result.rows.map(repeater => {
+    const lastCommunication = repeater.last_communication
+      ? new Date(repeater.last_communication)
+      : null;
+
+    let communicationStatus = 'no_signal';
+
+    if (lastCommunication) {
+      const elapsed = Date.now() - lastCommunication.getTime();
+
+      communicationStatus = elapsed <= 45000
+        ? 'online'
+        : 'no_communication';
+    }
+
+    return {
+      ...repeater,
+      lastCommunication,
+      communicationStatus
+    };
+  });
+
+  res.json(repeaters);
 }));
 
 
@@ -200,6 +221,82 @@ app.get('/api/repeaters/:id', asyncHandler(async (req, res) => {
   res.json(result.rows[0]);
 }));
 
+
+// ==============================
+// RECEBIMENTO DE TELEMETRIA ESP32
+// ==============================
+
+app.post('/api/telemetry/ingest', asyncHandler(async (req, res) => {
+  const body = req.body || {};
+
+  const device = requiredText(body.id, 'id').toUpperCase();
+  const temp = nullableNumber(body.temp);
+  const voltage = nullableNumber(body.voltage);
+  const signal = nullableNumber(body.signal);
+
+  if (temp === null || voltage === null || signal === null) {
+    return res.status(400).json({
+      error: 'Temperatura, tensão e sinal são obrigatórios.'
+    });
+  }
+
+  if (!Number.isInteger(signal) || signal < 0 || signal > 100) {
+    return res.status(400).json({
+      error: 'O sinal deve ser um número inteiro entre 0 e 100.'
+    });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    const updated = new Date().toISOString();
+
+    const result = await client.query(`
+      UPDATE public.repeaters
+      SET
+        temp = $1,
+        voltage = $2,
+        signal = $3,
+        updated = $4,
+        last_communication = NOW()
+      WHERE id = $5
+      RETURNING *
+    `, [temp, voltage, signal, updated, device]);
+
+    if (result.rowCount === 0) {
+      await client.query('ROLLBACK');
+
+      return res.status(404).json({
+        error: 'Repetidora não encontrada.'
+      });
+    }
+
+    const repeater = result.rows[0];
+
+    await client.query(`
+      INSERT INTO public.telemetry_history
+        (repeater_id, temp, voltage, signal)
+      VALUES ($1, $2, $3, $4)
+    `, [device, temp, voltage, signal]);
+
+    await client.query('COMMIT');
+
+    res.status(200).json({
+      message: 'Telemetria recebida com sucesso.',
+      repeater,
+      communicationStatus: 'online'
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+
+  } finally {
+    client.release();
+  }
+}));
 
 app.post('/api/repeaters', asyncHandler(async (req, res) => {
   const item = normalizeRepeater(req.body);
@@ -363,6 +460,8 @@ app.get('/api/alerts', asyncHandler(async (req, res) => {
 }));
 
 
+
+
 app.post('/api/alerts', asyncHandler(async (req, res) => {
   const body = req.body || {};
 
@@ -400,6 +499,87 @@ app.post('/api/alerts', asyncHandler(async (req, res) => {
   res.status(201).json(result.rows[0]);
 }));
 
+
+// ==============================
+// SIMULAÇÃO DE TEMPERATURA ELEVADA
+// ==============================
+
+app.post('/api/simulations/temperature', asyncHandler(async (req, res) => {
+  const device = requiredText(req.body?.device, 'device').toUpperCase();
+
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    const current = await client.query(
+      'SELECT * FROM public.repeaters WHERE id = $1 FOR UPDATE',
+      [device]
+    );
+
+    if (current.rowCount === 0) {
+      await client.query('ROLLBACK');
+
+      return res.status(404).json({
+        error: 'Repetidora não encontrada.'
+      });
+    }
+
+    const temperature = 65;
+    const updated = new Date().toISOString();
+
+    const repeaterResult = await client.query(`
+      UPDATE public.repeaters
+      SET
+        temp = $1,
+        status = 'bad',
+        updated = $2
+      WHERE id = $3
+      RETURNING *
+    `, [temperature, updated, device]);
+
+    const repeater = repeaterResult.rows[0];
+
+    await client.query(`
+      INSERT INTO public.telemetry_history
+        (repeater_id, temp, voltage, signal)
+      VALUES ($1, $2, $3, $4)
+    `, [
+      device,
+      repeater.temp,
+      repeater.voltage,
+      repeater.signal
+    ]);
+
+    const alertResult = await client.query(`
+      INSERT INTO public.alerts
+        (title, description, device, severity, time, ack)
+      VALUES ($1, $2, $3, $4, $5, FALSE)
+      RETURNING *
+    `, [
+      'Temperatura elevada',
+      `Temperatura atingiu ${temperature} °C. Limite máximo permitido: 60 °C.`,
+      device,
+      'critical',
+      updated
+    ]);
+
+    await client.query('COMMIT');
+
+    res.status(201).json({
+      message: 'Simulação de temperatura elevada executada.',
+      repeater,
+      alert: alertResult.rows[0]
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+
+  } finally {
+    client.release();
+  }
+}));
 
 app.patch('/api/alerts/:id/acknowledge', asyncHandler(async (req, res) => {
   const alertId = Number(req.params.id);
