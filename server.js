@@ -352,18 +352,35 @@ app.post('/api/telemetry/ingest', asyncHandler(async (req, res) => {
     // apenas o horário de comunicação é atualizado. Métricas e alertas
     // simulados permanecem intactos até o operador encerrar a simulação.
     if (current.simulation_fault) {
-      await client.query(
-        'UPDATE public.repeaters SET last_communication = NOW(), communication_alerted = FALSE WHERE id = $1',
-        [device]
-      );
-      await client.query('COMMIT');
-      return res.json({
-        message: 'Telemetria do ESP32 ignorada: simulação ativa.',
-        ignored: true,
-        simulation_fault: current.simulation_fault,
-        communicationStatus: 'online'
-      });
-    }
+
+  // Subtensão: simula interrupção da comunicação do monitoramento.
+  if (current.simulation_fault === 'voltage') {
+    await client.query('COMMIT');
+
+    return res.json({
+      message: 'Telemetria ignorada: subtensão com perda de comunicação simulada.',
+      ignored: true,
+      simulation_fault: 'voltage',
+      communicationStatus: 'simulated_outage'
+    });
+  }
+
+  // Outras simulações: preserva as métricas simuladas,
+  // mas mantém a comunicação do ESP32 ativa.
+  await client.query(
+    'UPDATE public.repeaters SET last_communication = NOW(), communication_alerted = FALSE WHERE id = $1',
+    [device]
+  );
+
+  await client.query('COMMIT');
+
+  return res.json({
+    message: 'Telemetria do ESP32 ignorada: simulação ativa.',
+    ignored: true,
+    simulation_fault: current.simulation_fault,
+    communicationStatus: 'online'
+  });
+}
 
     const metrics = {
       temp,
@@ -1114,7 +1131,7 @@ app.get('/api/dashboard/summary', asyncHandler(async (_req, res) => {
 // ==============================
 
 app.get('/', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.redirect('/login.html');
 });
 
 app.get('/index.html', (_req, res) => {

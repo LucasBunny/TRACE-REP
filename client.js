@@ -20,6 +20,36 @@ const isoDate = () => {
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 };
 
+function formatDate(value, dateOnly = false) {
+    if (!value) return '—';
+
+    const text = String(value);
+
+    // Datas de manutenção: YYYY-MM-DD
+    const onlyDate = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+    if (onlyDate) {
+        return `${onlyDate[3]}/${onlyDate[2]}/${onlyDate[1]}`;
+    }
+
+    const date = new Date(text);
+
+    if (Number.isNaN(date.getTime())) {
+        return text;
+    }
+
+    return new Intl.DateTimeFormat('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        ...(dateOnly ? {} : {
+            hour: '2-digit',
+            minute: '2-digit'
+        })
+    }).format(date);
+}
+
 /* Mudar essas variáveis para ficarem dinâmicas, i.e acesso ao bd */
 let repeaters = [
     {id:'REP-001',name:'Torre A · Centro',location:'São Paulo, SP',status:'ok',temp:42.6,voltage:12.2,signal:78,updated:'há 8 s',last:stamp(8),lat:-23.5505,lng:-46.6333},
@@ -75,6 +105,95 @@ function showToast(msg,kind='ok'){
     setTimeout(()=>el.remove(),3600);
 }
 
+// Exclusivo para falhas operacionais. Não interfere nos toasts pequenos.
+function showAlertPopup(novos) {
+    if (!Array.isArray(novos) || novos.length === 0) return;
+
+    const critico = novos.some(alerta => alerta.severity === 'critical');
+    const unico = novos.length === 1 ? novos[0] : null;
+    const titulo = unico
+        ? `${critico ? 'ALERTA CRÍTICO' : 'ATENÇÃO'} — ${unico.device}`
+        : `${novos.length} NOVOS ALERTAS DE REPETIDORAS`;
+    const mensagem = unico
+        ? `${unico.title}${unico.description ? ' — ' + unico.description : ''}`
+        : 'Consulte a Central de Alertas para verificar as ocorrências.';
+
+    const popup = document.createElement('div');
+    popup.className = `operational-alert ${critico ? 'critical' : 'warning'}`;
+    popup.setAttribute('role', 'alert');
+
+    const simbolo = document.createElement('span');
+    simbolo.className = 'operational-alert-symbol';
+    simbolo.textContent = '⚠';
+    simbolo.setAttribute('aria-hidden', 'true');
+
+    const conteudo = document.createElement('div');
+    conteudo.className = 'operational-alert-copy';
+    const cabecalho = document.createElement('strong');
+    cabecalho.textContent = titulo;
+    const descricao = document.createElement('div');
+    descricao.className = 'operational-alert-description';
+    descricao.textContent = mensagem;
+
+    conteudo.append(cabecalho, descricao);
+    popup.append(simbolo, conteudo);
+
+    // Mostra apenas um aviso destacado por vez.
+    document.querySelector('.operational-alert')?.remove();
+    document.body.appendChild(popup);
+    setTimeout(() => popup.remove(), 9000);
+}
+
+
+let alertasInicializados = false;
+const alertasConhecidos = new Set();
+const alertasPendentesPopup = [];
+let ultimoPopupAlerta = 0;
+
+function verificarNovosAlertas(lista) {
+    if (!Array.isArray(lista)) return;
+
+    // Na primeira consulta, registra o histórico sem notificar.
+    if (!alertasInicializados) {
+        lista.forEach(alerta => {
+            alertasConhecidos.add(String(alerta.id));
+        });
+
+        alertasInicializados = true;
+        return;
+    }
+
+    // Identifica apenas ocorrências novas e não reconhecidas.
+    lista.forEach(alerta => {
+        const id = String(alerta.id);
+
+        if (alertasConhecidos.has(id)) return;
+
+        alertasConhecidos.add(id);
+
+        // Somente falhas críticas e avisos operacionais aparecem em destaque.
+        if (!alerta.ack && ['critical', 'warning'].includes(alerta.severity)) {
+            alertasPendentesPopup.push(alerta);
+        }
+    });
+
+    if (alertasPendentesPopup.length === 0) return;
+
+    // Intervalo mínimo de 30 segundos entre avisos.
+    const agora = Date.now();
+
+    if (agora - ultimoPopupAlerta < 30000) {
+        return;
+    }
+
+    ultimoPopupAlerta = agora;
+
+    // Agrupa ocorrências recebidas durante o intervalo.
+    const novos = alertasPendentesPopup.splice(0);
+
+    showAlertPopup(novos);
+}
+
 
 const API_URL = '/api';
 
@@ -96,6 +215,9 @@ async function loadDataFromApi(silent = false) {
         repeaters = apiRepeaters;
         alerts = apiAlerts;
         maintenances = apiMaintenances;
+
+        verificarNovosAlertas(apiAlerts);
+
         await loadTelemetryHistory();
 
         renderAll();
@@ -135,22 +257,33 @@ function repeaterStatusBadge(r) {
     return `<span class="status ${stClass(r.status)}">${stLabel(r.status)}</span>`;
 }
 
-function communicationStatusBadge(r){
-    const labels = {
-        online: 'Online',
-        no_communication: 'Sem comunicação',
-        no_signal: 'Sem sinal'
-    };
-
-    const classes = {
-        online: 'status-ok',
-        no_communication: 'status-bad',
-        no_signal: 'status-warn'
-    };
-
+function communicationStatusBadge(r) {
     const status = r.communicationStatus || 'no_signal';
 
-    return `<span class="status ${classes[status] || 'status-neutral'}">${labels[status] || status}</span>`;
+    if (status === 'no_communication') {
+        return '<span class="status status-bad">Sem comunicação</span>';
+    }
+
+    if (status === 'no_signal') {
+        return '<span class="status status-warn">Sem sinal</span>';
+    }
+
+    const rxFalha = r.rf_in != null && Number(r.rf_in) <= 20;
+    const txFalha = r.rf_out != null && Number(r.rf_out) <= 20;
+
+    if (rxFalha && txFalha) {
+        return '<span class="status status-bad">Online · Falha RX/TX</span>';
+    }
+
+    if (rxFalha) {
+        return '<span class="status status-bad">Online · Falha RX</span>';
+    }
+
+    if (txFalha) {
+        return '<span class="status status-bad">Online · Falha TX</span>';
+    }
+
+    return '<span class="status status-ok">Online</span>';
 }
 
 function renderStats(){
@@ -403,9 +536,9 @@ function renderDashboardTable(){
             </td>
             <td>${repeaterStatusBadge(r)}</td>
             <td>${communicationStatusBadge(r)}</td>
-            <td>${r.temp===null?'—':r.temp.toFixed(1)+' °C'}</td>
-            <td>${r.voltage===null?'—':r.voltage.toFixed(1)+' V'}</td>
-            <td style="color:var(--muted)">${esc(r.updated)}</td>
+            <td>${r.communicationStatus !== 'online' ? 'Sem leitura' : r.temp == null ? '—' : Number(r.temp).toFixed(1)+' °C'}</td>
+            <td>${r.communicationStatus !== 'online' ? 'Sem leitura' : r.voltage == null ? '—' : Number(r.voltage).toFixed(1)+' V'}</td>
+            <td style="color:var(--muted)">${esc(formatDate(r.updated))}</td>
         </tr>`).join('');
 }
 
@@ -420,7 +553,7 @@ function renderRecentAlerts(){
                 <div class="alert-title">${esc(a.title)}</div>
                 <div class="alert-detail">${esc(a.device)} · ${esc(a.description)}</div>
             </div>
-            <div class="alert-time">${esc(a.time)}</div>
+            <div class="alert-time">${esc(formatDate(a.time))}</div>
         </div>`).join(''):'<div class="empty-state">Nenhum evento registrado.</div>';
 }
 
@@ -442,15 +575,18 @@ function renderRepeaters(){
             <td>${esc(r.location)}</td>
             <td>${repeaterStatusBadge(r)}</td>
             <td>${communicationStatusBadge(r)}</td>
-            <td>${r.temp===null?'—':r.temp.toFixed(1)+' °C'}</td>
-            <td>${r.voltage===null?'—':r.voltage.toFixed(1)+' V'}</td>
+            <td>${r.communicationStatus !== 'online' ? 'Sem leitura' : r.temp == null ? '—' : Number(r.temp).toFixed(1)+' °C'}</td>
+            <td>${r.communicationStatus !== 'online' ? 'Sem leitura' : r.voltage == null ? '—' : Number(r.voltage).toFixed(1)+' V'}</td>
             <td>
-                <div style="display:flex;align-items:center;gap:8px">
-                    <div class="health-bar" style="width:58px;margin:0">
-                        <span style="width:${r.signal}%;background:${r.signal<50?'var(--amber)':'var(--green)'}"></span>
-                    </div>
-                    <span>${r.signal}%</span>
-                </div>
+                ${r.communicationStatus !== 'online'
+                    ? 'Sem leitura'
+                    : `<div style="display:flex;align-items:center;gap:8px">
+                        <div class="health-bar" style="width:58px;margin:0">
+                            <span style="width:${r.signal}%;background:${r.signal<50?'var(--amber)':'var(--green)'}"></span>
+                        </div>
+                        <span>${r.signal}%</span>
+                    </div>`
+                }
             </td>
             <td>
                 <button class="action-link" data-detail="${esc(r.id)}">Detalhes</button>
@@ -477,7 +613,7 @@ function renderAlerts(){
             <td>
                 <span class="status ${sevClass(a.severity)}">${sevLabel(a.severity)}</span>
             </td>
-            <td>${esc(a.time)}</td>
+            <td>${esc(formatDate(a.time))}</td>
             <td>
                 <span class="status ${a.ack?'status-neutral':'status-warn'}">${a.ack?'Reconhecido':'Pendente'}</span>
             </td>
@@ -503,7 +639,7 @@ function renderMaintenance(){
                 <span class="status status-neutral">${esc(m.type)}</span>
             </td>
             <td>${esc(m.tech)}</td>
-            <td>${esc(m.date)}</td>
+            <td>${esc(formatDate(m.date, true))}</td>
             <td style="white-space:normal;min-width:170px;max-width:260px;color:var(--muted);line-height:1.5">${esc(m.note)}</td>
         </tr>`).join('');
     $('#maintenanceEmpty').style.display=list.length?'none':'block';
@@ -681,49 +817,83 @@ function maintenanceModal(device=''){
     );
 }
 
-function detailModal(id){
+
+function detailModal(id) {
     activeDetailId = id;
-    const r=repeaters.find(x=>x.id===id);
-    if(!r)return;
-    openModal(`${r.id} · Detalhes`,'Informações do equipamento de demonstração.',`
+
+    const r = repeaters.find(x => x.id === id);
+    if (!r) return;
+
+    const semComunicacao = r.communicationStatus !== 'online';
+
+    openModal(`${r.id} · Detalhes`, 'Informações do equipamento de demonstração.', `
         <div class="grid" style="gap:12px;grid-template-columns:repeat(2,minmax(0,1fr))">
+
             <div class="callout">
                 <div class="stat-label">Estado atual</div>
                 <div style="margin-top:9px">${repeaterStatusBadge(r)}</div>
             </div>
+
             <div class="callout">
                 <div class="stat-label">Sinal simulado</div>
-                <div class="report-value" style="font-size:23px;margin:8px 0 0">${r.signal}%</div>
+                <div class="report-value" style="font-size:23px;margin:8px 0 0">
+                    ${semComunicacao ? 'Sem leitura' : r.signal == null ? '—' : r.signal + '%'}
+                </div>
             </div>
+
             <div class="callout">
                 <div class="stat-label">Temperatura</div>
-                <div class="report-value" style="font-size:23px;margin:8px 0 0">${r.temp===null?'—':r.temp.toFixed(1)+'°'}</div>
+                <div class="report-value" style="font-size:23px;margin:8px 0 0">
+                    ${semComunicacao ? 'Sem leitura' : r.temp == null ? '—' : Number(r.temp).toFixed(1) + ' °C'}
+                </div>
             </div>
+
             <div class="callout">
                 <div class="stat-label">Tensão</div>
-                <div class="report-value" style="font-size:23px;margin:8px 0 0">${r.voltage===null?'—':r.voltage.toFixed(1)+' V'}</div>
+                <div class="report-value" style="font-size:23px;margin:8px 0 0">
+                    ${semComunicacao ? 'Sem leitura' : r.voltage == null ? '—' : Number(r.voltage).toFixed(1) + ' V'}
+                </div>
             </div>
+
         </div>
+
         <div class="metric-list">
             <div class="metric-row">
                 <span>Nome</span><strong>${esc(r.name)}</strong>
             </div>
+
             <div class="metric-row">
                 <span>Localização</span><strong>${esc(r.location)}</strong>
             </div>
+
             <div class="metric-row">
-                <span>Última atualização</span><strong>${esc(r.updated)}</strong>
+                <span>Última atualização</span><strong>${esc(formatDate(r.updated))}</strong>
             </div>
+
             <div class="metric-row">
-                <span>Coordenadas ilustrativas</span><strong>${r.lat != null && r.lng != null ? `${r.lat.toFixed(4)}, ${r.lng.toFixed(4)}` : 'Não cadastradas'}</strong>
+                <span>Coordenadas ilustrativas</span>
+                <strong>${r.lat != null && r.lng != null
+                    ? `${r.lat.toFixed(4)}, ${r.lng.toFixed(4)}`
+                    : 'Não cadastradas'}</strong>
             </div>
         </div>
-        <div class="notice">Leituras e coordenadas são dados demonstrativos, não medições reais.</div>
+
+        <div class="notice">
+            Leituras e coordenadas são dados demonstrativos, não medições reais.
+        </div>
+
         <div class="form-actions">
             <button class="btn" data-close-modal>Fechar</button>
-            <button class="btn btn-primary" id="detailMaintenance" data-device="${esc(id)}">Registrar manutenção</button>
-            <button type="button" class="btn btn-primary" data-sim-open="${esc(id)}">${r.simulation_fault ? 'Ver simulação ativa' : 'Simular falha'}</button>
-        </div>`,()=>{});
+
+            <button class="btn btn-primary" id="detailMaintenance" data-device="${esc(id)}">
+                Registrar manutenção
+            </button>
+
+            <button type="button" class="btn btn-primary" data-sim-open="${esc(id)}">
+                ${r.simulation_fault ? 'Ver simulação ativa' : 'Simular falha'}
+            </button>
+        </div>
+    `, () => {});
 }
 
 const simulationLabels = {
@@ -972,18 +1142,42 @@ document.addEventListener('click', async event=>{
             simulationModal(repeater.id);
             return;
         }
+        
         if (startButton) {
             const device = startButton.dataset.simStart;
             const fault = $('#simulationFault')?.value;
-            await requestApi('/simulations/start', {
-                method:'POST', headers:{'Content-Type':'application/json'},
+
+            const result = await requestApi('/simulations/start', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({device, fault})
             });
+
             closeModal();
+
+            // O backend devolve o alerta criado pela simulação.
+            // Registra o ID para evitar notificação duplicada no polling.
+            if (result.alert) {
+                const id = String(result.alert.id);
+
+                if (!alertasConhecidos.has(id)) {
+                    alertasConhecidos.add(id);
+                    alertasInicializados = true;
+                    if (!result.alert.ack && ['critical', 'warning'].includes(result.alert.severity)) {
+                        alertasPendentesPopup.push(result.alert);
+                    }
+                }
+
+                // Utiliza a proteção de 30 segundos já implementada.
+                verificarNovosAlertas([]);
+            }
+
             await loadDataFromApi(true);
-            showToast('Simulação iniciada em ' + device + '.');
+
+            // Evita um segundo toast de confirmação da mesma simulação.
             return;
         }
+
         if (stopButton) {
             const device = stopButton.dataset.simStop;
             await requestApi('/simulations/stop', {
@@ -998,9 +1192,9 @@ document.addEventListener('click', async event=>{
         console.error(error);
         showToast(error.message || 'Não foi possível concluir a operação.', 'error');
     }
-}, true);
-loadDataFromApi();
-setInterval(() => {
-    loadDataFromApi(true);
-}, 5000);
+    }, true);
+    loadDataFromApi();
+    setInterval(() => {
+        loadDataFromApi(true);
+    }, 5000);
 })();
