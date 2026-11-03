@@ -38,6 +38,7 @@ void loop() {
     doc["temp"] = random(400, 461) / 10.0;
     doc["voltage"] = random(120, 125) / 10.0;
     doc["signal"] = random(75, 96);
+    doc["channel_busy"] = false;
 
     String jsonString;
     serializeJson(doc, jsonString);

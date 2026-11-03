@@ -154,31 +154,19 @@ const asyncHandler = fn => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
 
 // ==============================
-// LOGIN - AUTENTICAÇÃO PROVISÓRIA
+// LOGIN DEMONSTRATIVO (não usar como autenticação de produção)
 // ==============================
-
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body || {};
 
-  const validUser = process.env.LOGIN_USER;
-  const validPassword = process.env.LOGIN_PASSWORD;
-
-  if (!validUser || !validPassword) {
-    return res.status(503).json({
-      error: 'Login não configurado no servidor.'
-    });
-  }
-
-  if (username === validUser && password === validPassword) {
+  if (username === 'admin' && password === '1234') {
     return res.json({
       token: 'trace-rep-demo-token',
       message: 'Login realizado com sucesso.'
     });
   }
 
-  return res.status(401).json({
-    error: 'Usuário ou senha inválidos.'
-  });
+  return res.status(401).json({ error: 'Usuário ou senha inválidos.' });
 });
 
 // ==============================

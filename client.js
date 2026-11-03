@@ -1,8 +1,6 @@
 (function(){
-    // Verifica se o usuário realizou login
-    const token = localStorage.getItem('traceRepToken');
-
-    if (!token) {
+    // Login demonstrativo: exige o token retornado por /api/login.
+    if (localStorage.getItem('traceRepToken') !== 'trace-rep-demo-token') {
         window.location.replace('/login.html');
         return;
     }
