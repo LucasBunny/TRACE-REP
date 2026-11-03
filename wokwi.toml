@@ -1,4 +1,0 @@
-[wokwi]
-version = 1
-firmware = '.pio/build/rep001/firmware.bin'
-elf = '.pio/build/rep001/firmware.elf'

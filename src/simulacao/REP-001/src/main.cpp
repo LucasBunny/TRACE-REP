@@ -69,5 +69,5 @@ void loop() {
     WiFi.reconnect();
   }
 
-  delay(15000);
+  delay(10000);
 }
